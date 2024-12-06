@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "DA Moderator",
+  "version": "1.2.5",
+  "description": "Звуковые оповещения, выбор кнопки для подтверждения донатов, автоматическое подтверждение донатов",
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.donationalerts.com/widget/lastdonations*"],
+      "js": ["popup.js", "content.js"],
+      "css": ["modal.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage"
+  ],
+  "action": {
+    "default_icon": "icon48.png",
+    "default_title": "DA Moderator",
+    "default_popup": "popup.html"
+  }
+}
