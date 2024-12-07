@@ -7,6 +7,7 @@
     <title>Настройки</title>
   </head>
   <body>
+    <div class="category">
     <h2 class="create-line-left">Управление клавишами</h2>
     <div class="alerts-key">
       <div class="key-heading">Одобрить оповещение</div>
@@ -16,10 +17,11 @@
       <div class="key-heading">Пропустить оповещение</div>
       <button class="choose-key" id="choose-skip-key"><span class="key-name" id="selected-skip-key"></span></button>
     </div>
+    </div>
 
     <div class="ahk-description"><span class="orange">* </span>Для того чтобы управлять уведомлениями из любого приложения, нужно скачать <a class="orange orange-link" href="https://cdn.jsdelivr.net/gh/phleesty/donation-alerts-moderator/AHK/DA-Moderator.ahk?download">AHK скрипт</a> либо его аналог в виде <a class="orange orange-link" href="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/AHK/DA-Moderator.exe">EXE файла</a>. Подробнее на <a class="orange orange-link" href="https://github.com/Phleesty/donation-alerts-moderator" target="_blank">GitHub странице</a> расширения.</div>
 
-    <div class="auto-approve-skip">
+    <div class="category">
       <h2 class="create-line-left">Автоподтверждение</h2>
       <ul>
         <div class="checkboxes">
@@ -81,7 +83,7 @@
 
 
 
-    <div class="auto-approve-skip">
+    <div class="category">
       <h2 class="create-line-left">Автопропуск</h2>
       <ul>
         <div class="checkboxes">
@@ -141,6 +143,7 @@
     </div> 
   </div>
 
+  <div class="category">
   <div class="sound-settings">
     <h2 class="create-line-left">Настройки звука</h2>
     <div class="sound-selection">
@@ -166,6 +169,7 @@
       </div>
     </div>
   </div>
+</div>
 
     <script src="popup.js"></script>
   </body>

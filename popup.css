@@ -217,7 +217,7 @@ input:focus + .slider {
   margin-right: 20px;
 } */
 
-.auto-approve-skip {
+.category {
   overflow: hidden;
 }
 
@@ -240,7 +240,7 @@ input:focus + .slider {
   top: 50%; /* Центрируем линию по вертикали */
   left: 100%; /* Линия начнётся сразу после заголовка */
   transform: translateY(-50%); /* Корректируем центрирование */
-  width: 270px; /* Длина линии */
+  width: 444px; /* Длина линии */
   height: 1px; /* Толщина линии */
   background-color: #48484e; /* Цвет линии */
   transform: translateZ(0);
