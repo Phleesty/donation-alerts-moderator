@@ -35,7 +35,7 @@ if !FileExist(ConfigFile) {
     ; Если ссылка указана, открываем её в указанном Google Chrome
     if (URL != "")
         Run, "%ChromePath%" --new-window "%URL%"
-    
+
     Gosub, SetHotkeys
 }
 
@@ -54,7 +54,6 @@ ShowGui:
 
     ; Создание GUI
     Gui, Destroy
-    Gui, +AlwaysOnTop
     Gui, Add, Text, x10 y13 w160, Автопринятие алерта:
     Gui, Add, Hotkey, x+1 vUserBind1 y10 w100, %UserBind1%
     Gui, Add, Text, x+10 y13, или
@@ -135,17 +134,35 @@ ResetSettings:
 return
 
 AutoAccept:
+    WinGet, activeWindow, ID, A
     WinActivate, Last alerts - DonationAlerts - Google Chrome
     WinWaitActive, Last alerts - DonationAlerts - Google Chrome
     Send, ^+{NumpadDiv}
+    WinActivate, ahk_id %activeWindow%
 return
 
 AutoSkip:
+    WinGet, activeWindow, ID, A
     WinActivate, Last alerts - DonationAlerts - Google Chrome
     WinWaitActive, Last alerts - DonationAlerts - Google Chrome
     Send, ^+{NumpadMult}
+    WinActivate, ahk_id %activeWindow%
 return
 
 ExitApp:
     ExitApp
+return
+
+GuiClose:
+    Gui, Hide
+    ; Восстанавливаем значения из файла config.ini
+    IniRead, UserBind1, %ConfigFile%, Settings, UserBind1
+    IniRead, MouseBind1, %ConfigFile%, Settings, MouseBind1
+    IniRead, UserBind2, %ConfigFile%, Settings, UserBind2
+    IniRead, MouseBind2, %ConfigFile%, Settings, MouseBind2
+    IniRead, URL, %ConfigFile%, Settings, URL
+    IniRead, ChromePath, %ConfigFile%, Settings, ChromePath
+
+    ; Активируем горячие клавиши
+    Gosub, SetHotkeys
 return
