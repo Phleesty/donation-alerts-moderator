@@ -159,8 +159,9 @@ document.addEventListener("keydown", (event) => {
 });
 
 // === 7. Регулярная проверка ===
+// При старте
+loadSettings();
 setInterval(() => {
-  loadSettings();
   processAlerts();
 }, 1000);
 
