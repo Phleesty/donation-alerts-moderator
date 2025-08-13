@@ -1,0 +1,12 @@
+{
+    "addons": {
+      "{876fc4ab-d8ad-4efa-bda7-86d463538ee3}": {
+        "updates": [
+          {
+            "version": "1.4.0",
+            "update_link": "https://github.com/phleesty/donation-alerts-moderator/releases/latest/da-moderator-firefox.xpi "
+          }
+        ]
+      }
+    }
+  }

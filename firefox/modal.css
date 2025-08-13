@@ -1,0 +1,79 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  }
+  
+  .modal {
+    display: block;
+    background: #2c2c2c;
+    padding: 30px 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+  }
+  
+  .modal p {
+    display: block;
+    margin-bottom: 40px;
+    font-size: 17px;
+    color: #f1f1f1;
+  }
+  .button-place {
+    display: flex;
+    justify-content: center;
+  }
+  .modal button {
+    display: inline-flex;
+    user-select: none;
+    vertical-align: top;
+    align-items: center;
+    border-radius: 100px;
+    border: 0;
+    white-space: nowrap;
+    padding: 0 2.5rem;
+    height: 5rem;
+    justify-content: center;
+    width: auto;
+    color: #f1f1f1; 
+  }
+  
+  .modal button#enable-sound {
+    background-image: linear-gradient(257deg, #f59c07, #f57507);
+    margin-right: 20px;
+  }
+
+  .modal button#enable-sound:hover {
+    background-image: linear-gradient(255deg, #ffbe51, #ff7e0f);
+    cursor: pointer;
+  }
+  
+  .modal button#disable-sound {
+    border: solid 1px #6d6d6d;
+    background-color: transparent;
+  }
+
+  .modal button#disable-sound:hover {
+    border-color: #fff;
+    cursor: pointer;
+  }
+  
+  .btn_icon {
+    margin-right: 1.5rem;
+    flex: 0 0 1.5rem;
+  }
+
+  .b-btn__text {
+  text-transform: uppercase;
+  font-weight: bold;
+  color: #f1f1f1;
+  font-size: 1.3rem;
+  line-height: 1;
+  }

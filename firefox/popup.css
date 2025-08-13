@@ -1,0 +1,392 @@
+@import url('https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&display=swap');
+* {
+  box-sizing: border-box;
+  font-family: "Geologica", "sans-serif";
+}
+
+body {
+    width: 460px;
+    margin: 20px;
+    background-color: #282828;
+    color: white;
+  }
+
+  .heading {
+    padding-bottom: 10px;
+    border-bottom: solid 1px #48484e
+
+  }
+
+  .alerts-key {
+    display: flex;
+    width: 100%;
+    margin-bottom: 15px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .key-heading {
+    display: inline-block;
+    font-size: 14px;
+    width: 200px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .choose-key {
+    display: inline-flex;
+    min-width: 155px;
+    min-height: 30px;
+    justify-content: center;
+    align-items: center
+  }
+
+  .ahk-description {
+    font-size: small;
+    font-weight: 300;
+    margin-bottom: 12px;
+    color: #a0a0a0;
+  }
+
+  .orange {
+    color:#f46b31;
+    text-decoration: none;
+  }
+
+.orange-link:hover {
+  color: #f49648;
+}
+
+  ul {
+    text-decoration: none;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .line-1 {
+    display: inline-block;
+  }
+
+  h1 {
+    font-size: 24px;
+    margin-top: 0;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  h2 { all: unset; font-size: 18px; font-weight: 600; line-height: 1; }
+
+  button {
+    padding: 8px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    background-color: #3c3c3c;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  button:hover {
+    background-image: linear-gradient(to right, #f46b31 0%, #f49648 100%);
+
+  }
+  
+  p {
+    margin-top: 20px;
+    font-size: 16px;
+  }
+  
+  
+
+
+/* CSS-переменные для гибкого масштабирования */
+:root {
+  --toggle-width: 45px; /* Базовая ширина */
+  --toggle-height: 26px; /* Базовая высота */
+  --toggle-knob-size: calc(var(--toggle-height) - 8px); /* Размер "кнопки" */
+  --toggle-bg: #838383; /* Цвет фона переключателя #ccc */
+  --toggle-active-bg: #f46b31; /* Цвет фона при включении */
+  --toggle-transition: 0.4s; /* Скорость анимации */
+}
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: var(--toggle-width);
+  height: var(--toggle-height);
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--toggle-bg);
+  transition: var(--toggle-transition);
+  border-radius: calc(var(--toggle-height) / 2);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: var(--toggle-knob-size);
+  width: var(--toggle-knob-size);
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: var(--toggle-transition);
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--toggle-active-bg);
+}
+
+input:checked + .slider:before {
+  transform: translateX(calc(var(--toggle-width) - var(--toggle-knob-size) - 8px));
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--toggle-active-bg);
+}
+
+.checkboxes {
+  display: inline-flex;
+  width: 100%;
+
+}
+
+/* Имя чекбокса */
+.checkbox-name {
+  display: inline-flex;
+
+}
+
+.checkbox-column {
+  display: flexbox;
+  margin-bottom: 15px;
+
+  justify-content: space-between;
+}
+
+.checkbox-column.first {
+  width: 29%;
+  padding-right: 20px;
+  border-right: solid 1px #3c3c3c;
+}
+
+.checkbox-column.second {
+  width: 36%;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-right: solid 1px #3c3c3c;
+
+}
+
+.checkbox-column.third {
+  width: 34%;
+  padding-left: 20px;
+}
+
+
+/* Wrapper */
+.wrapper {
+  display: flex;
+  font-size: 14px;
+  align-items: center;
+}
+
+.wrapper:nth-of-type(odd) {
+  margin-bottom: 15px;
+}
+
+.wrapper.half {
+  justify-content: space-between;
+}
+
+/* .wrapper.half:nth-child(odd) {
+  margin-right: 20px;
+} */
+
+.category {
+  overflow: hidden;
+}
+
+.create-line-left {
+
+  display: inline-block; /* Заголовок занимает ровно столько места, сколько нужно тексту */
+  position: relative;
+  margin: 0; /* Убираем отступы, чтобы точно выровнять линию */
+  padding-right: 10px;
+  padding-left: 10px;
+  margin-bottom: 15px;
+  margin-left: 20px;
+  color: #d6d6d6;
+}
+
+
+.create-line-left:after{ 
+  content: "";
+  position: absolute;
+  top: 50%; /* Центрируем линию по вертикали */
+  left: 100%; /* Линия начнётся сразу после заголовка */
+  transform: translateY(-50%); /* Корректируем центрирование */
+  width: 444px; /* Длина линии */
+  height: 1px; /* Толщина линии */
+  background-color: #48484e; /* Цвет линии */
+  transform: translateZ(0);
+}
+
+.create-line-left:before{ 
+  content: "";
+  position: absolute;
+  top: 50%; /* Центрируем линию по вертикали */
+  right: 100%; /* Линия начнётся сразу после заголовка */
+  transform: translateY(-50%); /* Корректируем центрирование */
+  width: 20px; /* Длина линии */
+  height: 1px; /* Толщина линии */
+  background-color: #48484e; /* Цвет линии */
+  transform: translateZ(0);
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay-content {
+  color: #f1f1f1;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  padding: 30px;
+  pointer-events: none;
+}
+
+.sound-selection {
+  margin-bottom: 15px;
+}
+
+.sound-select-heading {
+  display: inline-block;
+  font-size: 14px;
+  width: 120px;
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.volume-control-heading {
+  display: inline-block;
+  font-size: 14px;
+  width: 120px;
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.sound-select-button {
+  box-sizing: border-box;
+  padding: 8px;
+  min-width: 180px;
+  font-size: 14px;
+  border-radius: 4px;
+  background-color: transparent;
+  color: #f1f1f1;
+  transition: .1s ease-out;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: solid 1px #6d6d6d;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 15px;
+  outline: none;
+}
+
+.sound-select-button:hover {
+  border-color: #f1f1f1;
+  cursor: pointer;
+}
+
+.sound-select-button option {
+  background-color:#3d3d3d;
+}
+
+
+.play-sound-button {
+  padding: 9px 16px;
+}
+
+.input-container {
+  position: relative;
+  display: inline-block;
+}
+
+
+/* display: inline-flex;
+min-width: 155px;
+min-height: 30px;
+justify-content: center;
+align-items: center */
+
+
+
+
+
+.volume-input {
+  border-radius: 6px;
+  border: solid 1px #5a5a5a;
+  min-width: 60px;
+  min-height: 30px;
+  background-color: transparent;
+  color: #f1f1f1;
+  padding-left: 10px;
+}
+
+.percent-sign {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #f1f1f1;
+}
+
+
+.volume-control {
+  display: flex;
+  align-items: center;
+}
+
+.volume-control input[type="range"] {
+  margin-right: 10px;
+  width: 250px;
+  accent-color: #f46b31;
+}
+
+.volume-control input[type="text"] {
+  width: 50px;
+}
+
+.volume-control #volume-display {
+  margin-left: 10px;
+}
+

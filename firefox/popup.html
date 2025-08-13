@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="popup.css">
+
+    <title>Настройки</title>
+  </head>
+  <body>
+    <div class="category">
+    <h2 class="create-line-left">Управление клавишами</h2>
+    <div class="alerts-key">
+      <div class="key-heading">Одобрить оповещение</div>
+      <button class="choose-key" id="choose-approve-key"><span class="key-name" id="selected-approve-key"></span></button>
+    </div>
+    <div class="alerts-key">
+      <div class="key-heading">Пропустить оповещение</div>
+      <button class="choose-key" id="choose-skip-key"><span class="key-name" id="selected-skip-key"></span></button>
+    </div>
+    </div>
+
+    <div class="ahk-description"><span class="orange">* </span>Для того чтобы управлять уведомлениями из любого приложения, нужно скачать <a class="orange orange-link" href="https://cdn.jsdelivr.net/gh/phleesty/donation-alerts-moderator/AHK/DA-Moderator.ahk?download">AHK скрипт</a> либо его аналог в виде <a class="orange orange-link" href="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/AHK/DA-Moderator.exe">EXE файла</a>. Подробнее на <a class="orange orange-link" href="https://github.com/Phleesty/donation-alerts-moderator" target="_blank">GitHub странице</a> расширения.</div>
+
+    <div class="category">
+      <h2 class="create-line-left">Автоподтверждение</h2>
+      <ul>
+        <div class="checkboxes">
+
+          <div class="checkbox-column first">
+            <li class="wrapper half">
+              <div class="checkbox-name">Всё</div>
+              <label class="switch">
+                <input type="checkbox" data-id="all" id="data-alert_type-all-show-now">
+                <span class="slider round"></span>
+              </label>
+            </li>
+            <li class="wrapper half">
+              <div class="checkbox-name">Рейды</div>
+              <label class="switch">
+                <input type="checkbox" data-id="17" id="data-alert_type-17-show-now">
+                <span class="slider round"></span>
+              </label>
+            </li>
+          </div>
+
+
+          <div class="checkbox-column second">
+            <li class="wrapper half">
+              <div class="checkbox-name">Донаты</div>
+              <label class="switch">
+                <input type="checkbox" data-id="1" id="data-alert_type-1-show-now">
+                <span class="slider round"></span>
+              </label>
+            </li>
+            <li class="wrapper half">
+              <div class="checkbox-name">Награды</div>
+              <label class="switch">
+                <input type="checkbox" data-id="19" id="data-alert_type-19-show-now">
+                <span class="slider round"></span>
+              </label>
+            </li>
+          </div>
+
+          <div class="checkbox-column third">
+            <li class="wrapper half">
+              <div class="checkbox-name">Фолловы</div>
+              <label class="switch">
+                <input type="checkbox" data-id="6" id="data-alert_type-6-show-now">
+                <span class="slider round"></span>
+              </label>
+            </li>
+            <li class="wrapper half">
+              <div class="checkbox-name">Подписки</div>
+              <label class="switch">
+                <input type="checkbox" data-id="13" id="data-alert_type-13-show-now">
+                <span class="slider round"></span>
+              </label>
+            </li>
+          </div>
+        </div>
+      </ul>
+    </div>
+
+
+
+    <div class="category">
+      <h2 class="create-line-left">Автопропуск</h2>
+      <ul>
+        <div class="checkboxes">
+
+          <div class="checkbox-column first">
+            <li class="wrapper half">
+              <div class="checkbox-name">Всё</div>
+              <label class="switch">
+                <input type="checkbox" data-id="all" id="data-alert_type-all-skip">
+                <span class="slider round"></span>
+              </label>
+            </li>
+            <li class="wrapper half">
+              <div class="checkbox-name">Рейды</div>
+              <label class="switch">
+                <input type="checkbox" data-id="17" id="data-alert_type-17-skip">
+                <span class="slider round"></span>
+              </label>
+            </li>
+          </div>
+
+          <div class="checkbox-column second">
+            <li class="wrapper half">
+              <div class="checkbox-name">Донаты</div>
+              <label class="switch">
+                <input type="checkbox" data-id="1" id="data-alert_type-1-skip">
+                <span class="slider round"></span>
+              </label>
+            </li>
+            <li class="wrapper half">
+              <div class="checkbox-name">Награды</div>
+              <label class="switch">
+                <input type="checkbox" data-id="19" id="data-alert_type-19-skip">
+                <span class="slider round"></span>
+              </label>
+            </li>
+          </div>
+
+          <div class="checkbox-column third">
+            <li class="wrapper half">
+              <div class="checkbox-name">Фолловы</div>
+              <label class="switch">
+                <input type="checkbox" data-id="6" id="data-alert_type-6-skip">
+                <span class="slider round"></span>
+              </label>
+            </li>
+            <li class="wrapper half">
+              <div class="checkbox-name">Подписки</div>
+              <label class="switch">
+                <input type="checkbox" data-id="13" id="data-alert_type-13-skip">
+                <span class="slider round"></span>
+              </label>
+            </li>
+          </div>
+        </div>
+      </ul>
+    </div> 
+  </div>
+
+  <div class="category">
+  <div class="sound-settings">
+    <h2 class="create-line-left">Настройки звука</h2>
+    <div class="sound-selection">
+      <label class="sound-select-heading" for="sound-select">Выбрать звук:</label>
+      <select class="sound-select-button" id="sound-select">
+        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/doorbell.mp3">Doorbell</option>
+        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/sparkle-tone.mp3">Sparkle Tone</option>
+        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/cute-sound.mp3">Cute sound</option>
+        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/moon-drop.mp3">Moon Drop</option>
+        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/notification.mp3">Notification</option>
+        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/to-the-point.mp3">To the point</option>
+        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/old-sound.mp3">Old sound</option>
+      </select>
+      <button class="play-sound-button" id="play-sound">Прослушать</button>
+    </div>
+    <div class="volume-control">
+      <label class="volume-control-heading" for="volume-range">Громкость звука:</label>
+      <input class="volume-range" type="range" id="volume-range" min="0" max="100" step="1">
+      
+      <div class="input-container">
+        <input class="s-range-input volume-input" type="text" id="volume-input" value="50">
+        <span class="percent-sign">%</span>
+      </div>
+    </div>
+  </div>
+  </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
