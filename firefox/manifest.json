@@ -34,7 +34,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "876fc4ab-d8ad-4efa-bda7-86d463538ee3",
+      "id": "{876fc4ab-d8ad-4efa-bda7-86d463538ee3}",
       "update_url": "https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/updates.json",
       "strict_min_version": "78.0"
     }
