@@ -1,5 +1,111 @@
 // content.js
 
+// === 0. Фиксация позиций кнопок ===
+(function injectButtonPositionFix() {
+    'use strict';
+    
+    // Проверяем, не добавлен ли уже стиль
+    if (document.getElementById('button-position-fix')) {
+        return;
+    }
+    
+    const style = document.createElement('style');
+    style.id = 'button-position-fix';
+    
+    style.textContent = `
+        /* Контейнеры с отступом сверху */
+        .action-buttons-container-group,
+        .action-buttons-container {
+            position: relative !important;
+            display: inline-block !important;
+            padding-top: 10px !important;
+        }
+        
+        /* Фиксируем размеры контейнеров */
+        .action-buttons-container {
+            min-width: 52px !important;
+            min-height: 26px !important;
+        }
+        
+        .action-buttons-container-group {
+            min-width: 26px !important;
+            min-height: 26px !important;
+        }
+        
+        /* Заглушка для "Повторить" */
+        .action-buttons-container-group:has(.s-repeat-alert[style*="display: none"])::before,
+        .action-buttons-container-group:has(.s-repeat-alert[style*="display:none"])::before {
+            content: '';
+            position: absolute !important;
+            left: 0 !important;
+            top: 10px !important;
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+            background: url('/img/icons/repeat_alert_2.svg') center center no-repeat;
+            background-size: 16px 16px;
+            opacity: 0.05;
+            filter: grayscale(100%);
+        }
+        
+        /* Заглушка для "Показать" */
+        .action-buttons-container:has(.show-now[style*="display: none"])::before,
+        .action-buttons-container:has(.show-now[style*="display:none"])::before {
+            content: '';
+            position: absolute !important;
+            left: 0 !important;
+            top: 10px !important;
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+            background: url('/img/icons/play_alert.svg') center center no-repeat;
+            background-size: 13px 14px;
+            opacity: 0.05;
+            filter: grayscale(100%);
+        }
+        
+        /* Заглушка для "Пропустить" */
+        .action-buttons-container:has(.skip[style*="display: none"])::after,
+        .action-buttons-container:has(.skip[style*="display:none"])::after {
+            content: '';
+            position: absolute !important;
+            left: 26px !important;
+            top: 10px !important;
+            width: 16px;
+            height: 16px;
+            pointer-events: none;
+            background: url('/img/icons/skip_alert.svg') center center no-repeat;
+            background-size: 12px 12px;
+            opacity: 0.05;
+            filter: grayscale(100%);
+        }
+        
+        /* Кнопки с отступом сверху */
+        .action-button-item.s-repeat-alert {
+            position: absolute !important;
+            left: 0 !important;
+            top: 10px !important;
+        }
+        
+        .action-button-item.show-now {
+            position: absolute !important;
+            left: 0 !important;
+            top: 10px !important;
+        }
+        
+        .action-button-item.skip {
+            position: absolute !important;
+            left: 26px !important;
+            top: 10px !important;
+        }
+    `;
+    
+    // Добавляем в head как можно раньше
+    (document.head || document.documentElement).appendChild(style);
+    
+    console.log('✅ Button position fix injected');
+})();
+
 // === 1. Глобальные переменные ===
 let autoApproveSettings = {};
 let autoSkipSettings = {};
