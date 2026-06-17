@@ -4,10 +4,10 @@
   "version": "1.4.4",
   "description": "Звуковые оповещения, выбор кнопки для подтверждения донатов, автоматическое подтверждение донатов",
   "icons": {
-    "16": "icon16.png",
-    "32": "icon32.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "content_scripts": [
     {
@@ -25,13 +25,24 @@
     "storage",
     "alarms",
     "https://raw.githubusercontent.com/*",
-    "https://cdn.jsdelivr.net/*"
+    "https://cdn.jsdelivr.net/*",
+    "https://www.youtube.com/*",
+    "https://returnyoutubedislikeapi.com/*"
   ],
   "browser_action": {
-    "default_icon": "icon48.png",
+    "default_icon": "icons/icon48.png",
     "default_title": "DA Moderator",
     "default_popup": "popup.html"
   },
+  "web_accessible_resources": [
+    "sounds/doorbell.mp3",
+    "sounds/sparkle-tone.mp3",
+    "sounds/cute-sound.mp3",
+    "sounds/moon-drop.mp3",
+    "sounds/notification.mp3",
+    "sounds/to-the-point.mp3",
+    "sounds/old-sound.mp3"
+  ],
   "browser_specific_settings": {
     "gecko": {
       "id": "{876fc4ab-d8ad-4efa-bda7-86d463538ee3}",

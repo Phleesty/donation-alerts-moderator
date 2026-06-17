@@ -1,15 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&display=swap');
 * {
   box-sizing: border-box;
-  font-family: "Geologica", "sans-serif";
+  font-family: "Geologica", sans-serif;
 }
 
 body {
-    width: 450px;
+    width: {{BODY_WIDTH}};
     margin: 20px;
     background-color: #282828;
     color: white;
-  }
+}
 
   .heading {
     padding-bottom: 10px;
@@ -73,6 +73,12 @@ body {
     margin-bottom: 20px;
   }
   
+  {{H2_STYLE}}
+
+  select, option, button, input {
+    font-family: "Geologica", sans-serif;
+  }
+
   button {
     padding: 8px;
     font-size: 14px;
@@ -282,9 +288,6 @@ input:focus + .slider {
 
 .sound-selection {
   margin-bottom: 15px;
-}
-
-.sound-settings {
 }
 
 .sound-select-heading {

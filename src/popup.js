@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
+
+
   // Маппинг чекбоксов к связанным alert_type
   const alertTypeMapping = {
     "data-alert_type-all-show-now": ["1", "4", "6", "13", "15", "11", "19", "18", "17", "16", "14", "7", "10", "32", "12"],
@@ -205,10 +207,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const volumeInput = document.getElementById("volume-input");
   const playSoundButton = document.getElementById("play-sound");
 
+  // Функция для миграции старых ссылок на GitHub на новые локальные пути звуков
+  const migrateSoundUrl = (url) => {
+    if (!url) return "sounds/doorbell.mp3";
+    if (url.startsWith("https://raw.githubusercontent.com/")) {
+      const filename = url.substring(url.lastIndexOf("/") + 1);
+      return `sounds/${filename}`;
+    }
+    return url;
+  };
+
   // Загрузка сохраненных настроек
   const loadSoundSettings = () => {
     chrome.storage.local.get(["selectedSound", "volume"], (data) => {
-      if (data.selectedSound) soundSelect.value = data.selectedSound;
+      if (data.selectedSound) {
+        const migratedSound = migrateSoundUrl(data.selectedSound);
+        // Если звук мигрировал, перезаписываем в storage
+        if (migratedSound !== data.selectedSound) {
+          chrome.storage.local.set({ selectedSound: migratedSound });
+        }
+        soundSelect.value = migratedSound;
+      } else {
+        // Если звука нет вовсе, ставим doorbell
+        soundSelect.value = "sounds/doorbell.mp3";
+      }
       if (data.volume) {
         volumeRange.value = data.volume;
         volumeInput.value = data.volume;
@@ -239,9 +261,11 @@ document.addEventListener("DOMContentLoaded", () => {
   playSoundButton.addEventListener("click", () => {
     const selectedSound = soundSelect.value;
     const volume = volumeRange.value / 100;
-    const audio = new Audio(selectedSound);
+    // Если это локальный звук (относительный путь), получаем его полный URL через runtime.getURL
+    const soundUrl = selectedSound.startsWith("http") ? selectedSound : chrome.runtime.getURL(selectedSound);
+    const audio = new Audio(soundUrl);
     audio.volume = volume;
-    audio.play();
+    audio.play().catch((error) => console.error("Ошибка воспроизведения звука:", error));
   });
 
   // Инициализация настроек

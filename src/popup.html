@@ -19,7 +19,7 @@
     </div>
     </div>
 
-    <div class="ahk-description"><span class="orange">* </span>Для того чтобы управлять уведомлениями из любого приложения, нужно скачать <a class="orange orange-link" href="https://github.com/phleesty/donation-alerts-moderator/releases/latest/download/DAModerator-firefox.ahk?download">AHK скрипт</a> либо его аналог в виде <a class="orange orange-link" href="https://github.com/phleesty/donation-alerts-moderator/releases/latest/download/DAModerator-firefox.exe?download">EXE файла</a>. Подробнее на <a class="orange orange-link" href="https://github.com/Phleesty/donation-alerts-moderator" target="_blank">GitHub странице</a> расширения.</div>
+    <div class="ahk-description"><span class="orange">* </span>Для того чтобы управлять уведомлениями из любого приложения, нужно скачать <a class="orange orange-link" id="ahk-link" href="{{AHK_LINK}}" target="_blank">AHK скрипт</a> либо его аналог в виде <a class="orange orange-link" id="exe-link" href="{{EXE_LINK}}" target="_blank">EXE файла</a>. Подробнее на <a class="orange orange-link" href="https://github.com/Phleesty/donation-alerts-moderator" target="_blank">GitHub странице</a> расширения.</div>
 
     <div class="category">
       <h2 class="create-line-left">Автоподтверждение</h2>
@@ -149,13 +149,13 @@
     <div class="sound-selection">
       <label class="sound-select-heading" for="sound-select">Выбрать звук:</label>
       <select class="sound-select-button" id="sound-select">
-        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/doorbell.mp3">Doorbell</option>
-        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/sparkle-tone.mp3">Sparkle Tone</option>
-        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/cute-sound.mp3">Cute sound</option>
-        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/moon-drop.mp3">Moon Drop</option>
-        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/notification.mp3">Notification</option>
-        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/to-the-point.mp3">To the point</option>
-        <option class="sound-select-option" value="https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/old-sound.mp3">Old sound</option>
+        <option class="sound-select-option" value="sounds/doorbell.mp3">Doorbell</option>
+        <option class="sound-select-option" value="sounds/sparkle-tone.mp3">Sparkle Tone</option>
+        <option class="sound-select-option" value="sounds/cute-sound.mp3">Cute sound</option>
+        <option class="sound-select-option" value="sounds/moon-drop.mp3">Moon Drop</option>
+        <option class="sound-select-option" value="sounds/notification.mp3">Notification</option>
+        <option class="sound-select-option" value="sounds/to-the-point.mp3">To the point</option>
+        <option class="sound-select-option" value="sounds/old-sound.mp3">Old sound</option>
       </select>
       <button class="play-sound-button" id="play-sound">Прослушать</button>
     </div>

@@ -118,7 +118,7 @@ const backupSkipShortcut = { ctrl: true, alt: false, shift: true, key: "NumpadMu
 let soundEnabledCache = false;
 let volumeCache = 0.5; // 0..1
 let selectedSoundUrlCache = "";
-const DEFAULT_SOUND_URL = "https://raw.githubusercontent.com/phleesty/donation-alerts-moderator/main/sounds/doorbell.mp3";
+const DEFAULT_SOUND_URL = "sounds/doorbell.mp3";
 
 // Инициализация AudioContext — до загрузки настроек, чтобы избежать гонок
 let audioContext = (() => {
@@ -134,9 +134,43 @@ let audioBuffer;
 let sharedGainNode; // создаём один gain и переподключаем новые источники для минимизации накладных расходов
 let pendingSoundPlays = 0; // если звук ещё не готов, отметим, что нужно проиграть при готовности
 
+// Функция для получения абсолютного URL звука (внешнего или локального из расширения)
+const getAbsoluteSoundUrl = (url) => {
+  if (!url) return chrome.runtime.getURL(DEFAULT_SOUND_URL);
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("chrome-extension://") || url.startsWith("moz-extension://")) {
+    return url;
+  }
+  return chrome.runtime.getURL(url);
+};
+
+// Функция удержания вкладки и AudioContext в активном состоянии
+const keepAudioAlive = () => {
+  const preventSleep = () => {
+    if (audioContext) {
+      if (audioContext.state === "suspended") {
+        audioContext.resume().catch(() => {});
+      }
+      // Проигрываем микро-тишину для предотвращения троттлинга таймеров браузером
+      try {
+        const buffer = audioContext.createBuffer(1, 1, 22050);
+        const node = audioContext.createBufferSource();
+        node.buffer = buffer;
+        node.connect(audioContext.destination);
+        node.start(0);
+      } catch (_) {}
+    }
+  };
+  // Каждые 15 секунд воспроизводим микро-звук тишины
+  setInterval(preventSleep, 15000);
+};
+
+// Запускаем удержание активности
+keepAudioAlive();
+
 // Предзагрузка и декодирование выбранного звука
 let currentSoundAbortController;
-const preloadSelectedSound = (soundUrl) => {
+const preloadSelectedSound = (rawSoundUrl) => {
+  const soundUrl = getAbsoluteSoundUrl(rawSoundUrl);
   if (!soundUrl || soundUrl === selectedSoundUrlCache) return;
   selectedSoundUrlCache = soundUrl;
 
@@ -145,22 +179,26 @@ const preloadSelectedSound = (soundUrl) => {
   }
   currentSoundAbortController = new AbortController();
 
-  // Firefox may block cross-origin fetches from content scripts even with host permissions.
-  // Try background proxy first, then fallback to direct fetch.
-  const viaBg = () => new Promise((resolve, reject) => {
-    try {
-      chrome.runtime.sendMessage(
-        { type: "FETCH_SOUND_ARRAYBUFFER", url: soundUrl },
-        (res) => {
-          if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
-          if (!res || !res.ok || !res.buffer) return reject(new Error(res && res.error || "No data"));
-          resolve(res.buffer);
-        }
-      );
-    } catch (e) {
-      reject(e);
+  const viaBg = () => {
+    // Встроенные локальные звуки не требуют проксирования через фоновый скрипт
+    if (soundUrl.startsWith("chrome-extension://") || soundUrl.startsWith("moz-extension://")) {
+      return Promise.reject(new Error("Local resource"));
     }
-  });
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.runtime.sendMessage(
+          { type: "FETCH_SOUND_ARRAYBUFFER", url: soundUrl },
+          (res) => {
+            if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+            if (!res || !res.ok || !res.buffer) return reject(new Error(res && res.error || "No data"));
+            resolve(res.buffer);
+          }
+        );
+      } catch (e) {
+        reject(e);
+      }
+    });
+  };
 
   const direct = () => fetch(soundUrl, { signal: currentSoundAbortController.signal, cache: "force-cache" })
     .then((response) => response.arrayBuffer());
@@ -183,6 +221,16 @@ const preloadSelectedSound = (soundUrl) => {
         console.error("Ошибка загрузки звука:", error);
       }
     });
+};
+
+// Функция для миграции старых ссылок на GitHub на новые локальные пути звуков
+const migrateSoundUrl = (url) => {
+  if (!url) return "sounds/doorbell.mp3";
+  if (url.startsWith("https://raw.githubusercontent.com/")) {
+    const filename = url.substring(url.lastIndexOf("/") + 1);
+    return `sounds/${filename}`;
+  }
+  return url;
 };
 
 // === 2. Загрузка настроек ===
@@ -210,11 +258,9 @@ const loadSettings = () => {
     // Загрузка настроек звука (в кэш) и предзагрузка звука
     if (typeof data.soundEnabled !== "undefined") soundEnabledCache = !!data.soundEnabled;
     if (typeof data.volume !== "undefined") volumeCache = Number(data.volume) / 100;
-    if (data.selectedSound) {
-      preloadSelectedSound(data.selectedSound);
-    } else {
-      preloadSelectedSound(DEFAULT_SOUND_URL);
-    }
+    
+    const targetSound = data.selectedSound ? migrateSoundUrl(data.selectedSound) : DEFAULT_SOUND_URL;
+    preloadSelectedSound(targetSound);
   });
 };
 
@@ -323,6 +369,187 @@ document.addEventListener("keydown", (event) => {
   if (isShortcutPressed(event, skipShortcut) || isShortcutPressed(event, backupSkipShortcut)) handleSkip();
 });
 
+// === 6.5. YouTube Превью (без API-ключа) ===
+const processedYoutubeElements = new WeakSet();
+const youtubeCache = new Map();
+
+function extractVideoId(url) {
+  if (!url) return null;
+  const patterns = [
+    /[?&]v=([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function formatNumber(n) {
+  if (!n) return "?";
+  n = Number(String(n).replace(/[^\d]/g, ""));
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  return n.toString();
+}
+
+// Функция отправки JSON-запросов через фоновый скрипт (CORS-прокси)
+async function fetchJsonViaBg(url) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.runtime.sendMessage({ type: "FETCH_JSON", url: url }, (res) => {
+        if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
+        if (!res || !res.ok) return reject(new Error(res && res.error || "No response"));
+        resolve(res.data);
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+async function fetchYoutubeOembed(videoId) {
+  try {
+    const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+    return await fetchJsonViaBg(url);
+  } catch (e) {
+    console.error("YouTube oEmbed load error via BG:", e);
+    return null;
+  }
+}
+
+async function fetchYoutubeDislikes(videoId) {
+  try {
+    const url = `https://returnyoutubedislikeapi.com/votes?videoId=${videoId}`;
+    return await fetchJsonViaBg(url);
+  } catch (e) {
+    console.error("Dislikes load error via BG:", e);
+    return null;
+  }
+}
+
+function createPreviewContainer() {
+  const el = document.createElement("div");
+  el.classList.add("yt-preview-container");
+  Object.assign(el.style, {
+    marginTop: "8px",
+    padding: "8px 10px",
+    borderRadius: "8px",
+    background: "rgba(0,0,0,0.25)",
+    fontSize: "12px",
+    display: "flex",
+    gap: "10px",
+    alignItems: "center",
+    border: "1px solid rgba(255,255,255,0.1)"
+  });
+  return el;
+}
+
+async function processYoutubePreviews(eventEl) {
+  if (processedYoutubeElements.has(eventEl)) return;
+  processedYoutubeElements.add(eventEl);
+
+  const link = eventEl.querySelector(".message-container a");
+  if (!link) return;
+
+  const videoId = extractVideoId(link.href);
+  if (!videoId) return;
+
+  const container = createPreviewContainer();
+
+  const thumb = document.createElement("img");
+  thumb.classList.add("yt-preview-thumbnail");
+  Object.assign(thumb.style, {
+    width: "96px",
+    height: "54px",
+    objectFit: "cover",
+    borderRadius: "6px",
+    flexShrink: "0"
+  });
+
+  const info = document.createElement("div");
+  info.classList.add("yt-preview-info");
+  Object.assign(info.style, {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+    minWidth: "0",
+    flex: "1"
+  });
+
+  const title = document.createElement("div");
+  title.classList.add("yt-preview-title");
+  Object.assign(title.style, {
+    fontWeight: "600",
+    lineHeight: "1.25",
+    wordBreak: "break-word"
+  });
+  title.innerText = "Загрузка...";
+
+  const meta = document.createElement("div");
+  meta.classList.add("yt-preview-meta");
+  Object.assign(meta.style, {
+    opacity: "0.8",
+    whiteSpace: "nowrap"
+  });
+  meta.innerText = "Получение статистики...";
+
+  info.appendChild(title);
+  info.appendChild(meta);
+
+  container.appendChild(thumb);
+  container.appendChild(info);
+
+  link.parentElement.appendChild(container);
+
+  try {
+    let ytData = youtubeCache.get(videoId);
+
+    if (!ytData) {
+      const [oembed, dislikesData] = await Promise.all([
+        fetchYoutubeOembed(videoId),
+        fetchYoutubeDislikes(videoId)
+      ]);
+
+      if (!oembed) {
+        meta.innerText = "Видео не найдено";
+        return;
+      }
+
+      ytData = {
+        title: oembed.title,
+        channel: oembed.author_name,
+        thumbnail: oembed.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+        views: dislikesData ? dislikesData.viewCount : null,
+        likes: dislikesData ? dislikesData.likes : null,
+        dislikes: dislikesData ? dislikesData.dislikes : null
+      };
+
+      youtubeCache.set(videoId, ytData);
+    }
+
+    thumb.src = ytData.thumbnail;
+    title.innerText = ytData.title;
+
+    meta.innerText =
+      `${ytData.channel}      ` +
+      `▶️ ${formatNumber(ytData.views)}   ` +
+      `👍 ${formatNumber(ytData.likes)}   ` +
+      `👎 ${formatNumber(ytData.dislikes)}`;
+
+  } catch (e) {
+    console.error("Preview load error:", e);
+    meta.innerText = "Ошибка загрузки";
+  }
+}
+
+function scanYoutube() {
+  document.querySelectorAll(".event").forEach(processYoutubePreviews);
+}
+
 // === 7. Регулярная проверка + мгновенное реагирование через MutationObserver ===
 // При старте
 loadSettings();
@@ -332,15 +559,17 @@ const observer = new MutationObserver((mutations) => {
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
       if (!(node instanceof HTMLElement)) continue;
-      const candidate = node.matches?.(".event.b-last-events-widget__item.moderated")
+      const candidate = node.matches?.(".event")
         ? node
-        : node.querySelector?.(".event.b-last-events-widget__item.moderated");
+        : node.querySelector?.(".event");
       if (candidate) {
         // Быстрый обработчик только для звука + метки, чтобы уменьшить задержку
         if (shouldPlaySound(candidate) && soundEnabledCache) {
           playSound(volumeCache);
           candidate.dataset.soundPlayed = "true";
         }
+        // Обработка YouTube превью
+        processYoutubePreviews(candidate);
       }
     }
   }
@@ -348,9 +577,15 @@ const observer = new MutationObserver((mutations) => {
 
 observer.observe(document.body, { childList: true, subtree: true });
 
-// Лёгкий интервал как резервный механизм для авто-кликов и пропущенных мутаций
+// Запускаем первичное сканирование превью при старте
+scanYoutube();
+
+// Лёгкий интервал как резервный механизм для авто-кликов, пропущенных мутаций и YouTube превью
 const PROCESS_INTERVAL_MS = 1000;
-setInterval(processAlerts, PROCESS_INTERVAL_MS);
+setInterval(() => {
+  processAlerts();
+  scanYoutube();
+}, PROCESS_INTERVAL_MS);
 
 // === 8. Обновление настроек при их изменении ===
 chrome.storage.onChanged.addListener((changes) => {
