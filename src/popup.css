@@ -26,6 +26,7 @@ body {
     margin: 20px;
     background-color: #282828;
     color: white;
+    overflow-x: hidden;
 }
 
   .heading {
@@ -241,7 +242,7 @@ input:focus + .slider {
 } */
 
 .category {
-  overflow: hidden;
+  position: relative;
 }
 
 .create-line-left {
@@ -336,7 +337,7 @@ input:focus + .slider {
   justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
-  padding: 8px 12px;
+  padding: 6px 12px;
   min-width: 180px;
   font-size: 14px;
   border-radius: 4px;
@@ -368,17 +369,17 @@ input:focus + .slider {
 
 .custom-select-options {
   position: absolute;
-  top: 100%;
+  bottom: 100%;
   left: 0;
   right: 0;
-  margin-top: 4px;
+  margin-bottom: 4px;
   background-color: #3c3c3c;
   border: 1px solid #6d6d6d;
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
   z-index: 100;
   display: none;
-  max-height: 180px;
+  max-height: 220px;
   overflow-y: auto;
 }
 
@@ -387,7 +388,7 @@ input:focus + .slider {
 }
 
 .custom-select-option {
-  padding: 8px 12px;
+  padding: 6px 12px;
   font-size: 14px;
   color: #f1f1f1;
   cursor: pointer;
