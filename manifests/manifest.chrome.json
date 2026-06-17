@@ -42,7 +42,10 @@
         "sounds/moon-drop.mp3",
         "sounds/notification.mp3",
         "sounds/to-the-point.mp3",
-        "sounds/old-sound.mp3"
+        "sounds/old-sound.mp3",
+        "fonts/Geologica-Regular.ttf",
+        "fonts/Geologica-SemiBold.ttf",
+        "fonts/Geologica-Bold.ttf"
       ],
       "matches": ["https://www.donationalerts.com/*"]
     }

@@ -434,17 +434,6 @@ async function fetchYoutubeDislikes(videoId) {
 function createPreviewContainer() {
   const el = document.createElement("div");
   el.classList.add("yt-preview-container");
-  Object.assign(el.style, {
-    marginTop: "8px",
-    padding: "8px 10px",
-    borderRadius: "8px",
-    background: "rgba(0,0,0,0.25)",
-    fontSize: "12px",
-    display: "flex",
-    gap: "10px",
-    alignItems: "center",
-    border: "1px solid rgba(255,255,255,0.1)"
-  });
   return el;
 }
 
@@ -462,39 +451,16 @@ async function processYoutubePreviews(eventEl) {
 
   const thumb = document.createElement("img");
   thumb.classList.add("yt-preview-thumbnail");
-  Object.assign(thumb.style, {
-    width: "96px",
-    height: "54px",
-    objectFit: "cover",
-    borderRadius: "6px",
-    flexShrink: "0"
-  });
 
   const info = document.createElement("div");
   info.classList.add("yt-preview-info");
-  Object.assign(info.style, {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-    minWidth: "0",
-    flex: "1"
-  });
 
   const title = document.createElement("div");
   title.classList.add("yt-preview-title");
-  Object.assign(title.style, {
-    fontWeight: "600",
-    lineHeight: "1.25",
-    wordBreak: "break-word"
-  });
   title.innerText = "Загрузка...";
 
   const meta = document.createElement("div");
   meta.classList.add("yt-preview-meta");
-  Object.assign(meta.style, {
-    opacity: "0.8",
-    whiteSpace: "nowrap"
-  });
   meta.innerText = "Получение статистики...";
 
   info.appendChild(title);

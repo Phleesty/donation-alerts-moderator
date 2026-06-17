@@ -217,6 +217,56 @@ document.addEventListener("DOMContentLoaded", () => {
     return url;
   };
 
+  // Логика для кастомного селекта выбора звука
+  const customContainer = document.querySelector(".custom-select-container");
+  const customTrigger = document.getElementById("custom-sound-select-trigger");
+  const customOptionsContainer = document.getElementById("custom-sound-select-options");
+  const customOptions = document.querySelectorAll(".custom-select-option");
+  const customText = customContainer.querySelector(".custom-select-text");
+
+  // Открыть/закрыть список по клику
+  customTrigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    customContainer.classList.toggle("open");
+  });
+
+  // Клик вне селекта закрывает его
+  document.addEventListener("click", () => {
+    customContainer.classList.remove("open");
+  });
+
+  // Синхронизация кастомного селекта с нативным
+  const syncCustomSelect = () => {
+    const currentVal = soundSelect.value;
+    const selectedOpt = Array.from(customOptions).find(opt => opt.getAttribute("data-value") === currentVal);
+    if (selectedOpt) {
+      customText.textContent = selectedOpt.textContent;
+      customOptions.forEach(o => o.classList.remove("selected"));
+      selectedOpt.classList.add("selected");
+    }
+  };
+
+  // Выбор опции в кастомном меню
+  customOptions.forEach(opt => {
+    opt.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const val = opt.getAttribute("data-value");
+      const text = opt.textContent;
+
+      // Обновляем текст в триггере
+      customText.textContent = text;
+      customContainer.classList.remove("open");
+
+      // Обновляем выделение класса
+      customOptions.forEach(o => o.classList.remove("selected"));
+      opt.classList.add("selected");
+
+      // Обновляем нативный скрытый селект и триггерим событие
+      soundSelect.value = val;
+      soundSelect.dispatchEvent(new Event("change"));
+    });
+  });
+
   // Загрузка сохраненных настроек
   const loadSoundSettings = () => {
     chrome.storage.local.get(["selectedSound", "volume"], (data) => {
@@ -235,6 +285,8 @@ document.addEventListener("DOMContentLoaded", () => {
         volumeRange.value = data.volume;
         volumeInput.value = data.volume;
       }
+      // Синхронизируем кастомный селект после загрузки значения
+      syncCustomSelect();
     });
   };
 

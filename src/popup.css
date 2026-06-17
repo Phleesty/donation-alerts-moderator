@@ -1,4 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&display=swap');
+@font-face {
+  font-family: 'Geologica';
+  font-style: normal;
+  font-weight: 400;
+  src: url('fonts/Geologica-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Geologica';
+  font-style: normal;
+  font-weight: 600;
+  src: url('fonts/Geologica-SemiBold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Geologica';
+  font-style: normal;
+  font-weight: 700;
+  src: url('fonts/Geologica-Bold.ttf') format('truetype');
+}
 * {
   box-sizing: border-box;
   font-family: "Geologica", sans-serif;
@@ -306,32 +323,104 @@ input:focus + .slider {
   white-space: nowrap;
 }
 
-.sound-select-button {
+.custom-select-container {
+  position: relative;
+  display: inline-block;
+  min-width: 180px;
+  vertical-align: middle;
+  margin-right: 15px;
+}
+
+.custom-select-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   box-sizing: border-box;
-  padding: 8px;
+  padding: 8px 12px;
   min-width: 180px;
   font-size: 14px;
   border-radius: 4px;
-  background-color: transparent;
+  background-color: #3c3c3c;
   color: #f1f1f1;
-  transition: .1s ease-out;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   border: solid 1px #6d6d6d;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-right: 15px;
-  outline: none;
+  user-select: none;
 }
 
-.sound-select-button:hover {
+.custom-select-trigger:hover {
   border-color: #f1f1f1;
-  cursor: pointer;
 }
 
-.sound-select-button option {
-  background-color:#3d3d3d;
+.custom-select-arrow {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #f1f1f1;
+  margin-left: 10px;
+  transition: transform 0.3s ease;
+}
+
+.custom-select-container.open .custom-select-arrow {
+  transform: rotate(180deg);
+}
+
+.custom-select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background-color: #3c3c3c;
+  border: 1px solid #6d6d6d;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  display: none;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.custom-select-container.open .custom-select-options {
+  display: block;
+}
+
+.custom-select-option {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #f1f1f1;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  text-align: left;
+}
+
+.custom-select-option:hover {
+  background-color: #f46b31;
+  color: #fff;
+}
+
+.custom-select-option.selected {
+  background-color: #48484e;
+  font-weight: 600;
+}
+
+/* Стилизация скроллбара для выпадающего списка */
+.custom-select-options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-select-options::-webkit-scrollbar-track {
+  background: #3c3c3c;
+}
+
+.custom-select-options::-webkit-scrollbar-thumb {
+  background: #6d6d6d;
+  border-radius: 3px;
+}
+
+.custom-select-options::-webkit-scrollbar-thumb:hover {
+  background: #f46b31;
 }
 
 
