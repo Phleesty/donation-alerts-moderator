@@ -17,6 +17,10 @@
         {
           "version": "2.1.2",
           "update_link": "https://github.com/phleesty/donation-alerts-moderator/releases/latest/download/DAModerator-firefox.xpi"
+        },
+        {
+          "version": "2.1.3",
+          "update_link": "https://github.com/phleesty/donation-alerts-moderator/releases/latest/download/DAModerator-firefox.xpi"
         }
       ]
     }
