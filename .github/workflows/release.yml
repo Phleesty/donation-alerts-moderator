@@ -17,6 +17,9 @@ permissions:
 jobs:
   release:
     runs-on: windows-latest
+    env:
+      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
 
     steps:
     - name: Checkout repository
@@ -54,11 +57,8 @@ jobs:
         Rename-Item -Path DAModerator-firefox.zip -NewName DAModerator-firefox.xpi
 
     - name: Sign Firefox extension with Web-Ext (Mozilla AMO)
-      if: secrets.AMO_JWT_ISSUER != '' && secrets.AMO_JWT_SECRET != ''
+      if: env.AMO_JWT_ISSUER != '' && env.AMO_JWT_SECRET != ''
       shell: powershell
-      env:
-        AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
-        AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
       run: |
         # Запускаем web-ext sign с каналом unlisted (для самостоятельного распространения)
         npx web-ext sign --source-dir dist/firefox --api-key $env:AMO_JWT_ISSUER --api-secret $env:AMO_JWT_SECRET --channel unlisted
