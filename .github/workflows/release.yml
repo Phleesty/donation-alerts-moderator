@@ -63,13 +63,32 @@ jobs:
         # Run web-ext sign with unlisted channel
         npx web-ext sign --source-dir dist/firefox --api-key $env:AMO_JWT_ISSUER --api-secret $env:AMO_JWT_SECRET --channel unlisted
         
-        # Find signed file and replace DAModerator-firefox.xpi
-        $signedFile = Get-ChildItem -Path web-ext-artifacts\*.xpi | Select-Object -First 1
-        if ($signedFile) {
-            Copy-Item -Path $signedFile.FullName -Destination DAModerator-firefox.xpi -Force
-            Write-Host "Firefox extension successfully signed via AMO and copied to DAModerator-firefox.xpi"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Warning: web-ext sign failed. Attempting to download already signed XPI from Mozilla AMO..."
+            
+            # Determine tag name
+            $tagName = "${{ github.event.inputs.tag_name }}"
+            if ([string]::IsNullOrEmpty($tagName)) {
+                $tagName = $env:GITHUB_REF_NAME
+            }
+            $tagName = $tagName -replace '^refs/tags/', ''
+            
+            # Run download script
+            node download-signed.js $tagName DAModerator-firefox.xpi
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "Failed to sign or download the Firefox extension."
+                exit 1
+            }
         } else {
-            Write-Error "Signed file not found in web-ext-artifacts"
+            # Find signed file and replace DAModerator-firefox.xpi
+            $signedFile = Get-ChildItem -Path web-ext-artifacts\*.xpi | Select-Object -First 1
+            if ($signedFile) {
+                Copy-Item -Path $signedFile.FullName -Destination DAModerator-firefox.xpi -Force
+                Write-Host "Firefox extension successfully signed via AMO and copied to DAModerator-firefox.xpi"
+            } else {
+                Write-Error "Signed file not found in web-ext-artifacts"
+                exit 1
+            }
         }
 
     - name: Download and Setup Ahk2Exe Compiler
