@@ -112,9 +112,10 @@ jobs:
     - name: Download and Setup AutoHotkey Compiler
       shell: powershell
       run: |
-        # Download official AutoHotkey portable package containing compiler and base .bin files
-        Invoke-WebRequest -Uri "https://www.autohotkey.com/download/ahk.zip" -OutFile "ahk.zip"
+        # Download official AutoHotkey portable package from GitHub to bypass Cloudflare
+        Invoke-WebRequest -Uri "https://github.com/AutoHotkey/AutoHotkey/releases/download/v1.1.37.02/AutoHotkey_1.1.37.02.zip" -OutFile "ahk.zip"
         Expand-Archive -Path "ahk.zip" -DestinationPath "AhkCompiler"
+
 
     - name: Compile Universal AHK Script to EXE
       shell: powershell
