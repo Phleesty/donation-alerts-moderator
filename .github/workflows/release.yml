@@ -109,24 +109,33 @@ jobs:
         }
 
 
-    - name: Download and Setup Ahk2Exe Compiler
+    - name: Download and Setup AutoHotkey Compiler
       shell: powershell
       run: |
-        # Get latest release info from GitHub API
-        $release = Invoke-RestMethod -Uri "https://api.github.com/repos/AutoHotkey/Ahk2Exe/releases/latest"
-        $asset = $release.assets | Where-Object { $_.name -like "Ahk2Exe*.zip" } | Select-Object -First 1
-        $downloadUrl = $asset.browser_download_url
-        Write-Host "Downloading Ahk2Exe from: $downloadUrl"
-        
-        # Download and extract compiler
-        Invoke-WebRequest -Uri $downloadUrl -OutFile "Ahk2Exe.zip"
-        Expand-Archive -Path "Ahk2Exe.zip" -DestinationPath "Ahk2ExeCompiler"
+        # Download official AutoHotkey portable package containing compiler and base .bin files
+        Invoke-WebRequest -Uri "https://www.autohotkey.com/download/ahk.zip" -OutFile "ahk.zip"
+        Expand-Archive -Path "ahk.zip" -DestinationPath "AhkCompiler"
 
     - name: Compile Universal AHK Script to EXE
       shell: powershell
       run: |
-        # Компилируем универсальный скрипт с нашей иконкой
-        .\Ahk2ExeCompiler\Ahk2Exe.exe /in "AHK/DAModerator.ahk" /out "DAModerator.exe" /icon "AHK/icon.ico"
+        # Resolve absolute paths for compiler, inputs, outputs, and base files
+        $compilerPath = (Resolve-Path "AhkCompiler\Compiler\Ahk2Exe.exe").Path
+        $inPath = (Resolve-Path "AHK/DAModerator.ahk").Path
+        $outPath = "$pwd\DAModerator.exe"
+        $iconPath = (Resolve-Path "AHK/icon.ico").Path
+        $binPath = (Resolve-Path "AhkCompiler\Compiler\Unicode 32-bit.bin").Path
+        
+        # Compile script
+        Start-Process -FilePath $compilerPath -ArgumentList "/in `"$inPath`" /out `"$outPath`" /icon `"$iconPath`" /bin `"$binPath`"" -Wait -NoNewWindow
+        
+        # Verify if executable was created
+        if (Test-Path "DAModerator.exe") {
+            Write-Host "✅ Universal AHK script successfully compiled to DAModerator.exe!"
+        } else {
+            Write-Error "❌ Compilation failed: DAModerator.exe was not created."
+            exit 1
+        }
 
     - name: Create GitHub Release and Upload Assets
       shell: powershell
