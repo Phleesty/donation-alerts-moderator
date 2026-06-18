@@ -32,8 +32,6 @@
     "tabs",
     "storage",
     "alarms",
-    "https://raw.githubusercontent.com/*",
-    "https://cdn.jsdelivr.net/*",
     "https://www.youtube.com/*",
     "https://returnyoutubedislikeapi.com/*"
   ],

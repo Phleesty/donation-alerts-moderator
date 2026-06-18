@@ -143,6 +143,10 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # Force UTF-8 encoding for console output and commands to prevent Cyrillic encoding issues
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        $OutputEncoding = [System.Text.Encoding]::UTF8
+
         # Определяем имя тега: либо из события push, либо из инпута workflow_dispatch
         $tagName = "${{ github.event.inputs.tag_name }}"
         if ([string]::IsNullOrEmpty($tagName)) {
@@ -158,6 +162,10 @@ jobs:
     - name: Commit and push version updates to repository
       shell: powershell
       run: |
+        # Force UTF-8 encoding for git commands
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        $OutputEncoding = [System.Text.Encoding]::UTF8
+
         # Configure git user
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
@@ -168,7 +176,7 @@ jobs:
         # Commit and push if changed
         $status = git status --porcelain
         if ($status) {
-            git commit -m "chore: auto-update manifests and updates.json version [skip ci]"
+            git commit -m "🔧 chore: автообновление версии в манифестах и updates.json [skip ci]"
             git push origin main
             Write-Host "Version changes successfully pushed to main branch"
         } else {
