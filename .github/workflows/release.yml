@@ -33,13 +33,13 @@ jobs:
     - name: Run version update script
       shell: powershell
       run: |
-        # Получаем версию из инпута или из тега
+        # Get version from input or tag
         $tagName = "${{ github.event.inputs.tag_name }}"
         if ([string]::IsNullOrEmpty($tagName)) {
             $tagName = $env:GITHUB_REF_NAME
         }
         $tagName = $tagName -replace '^refs/tags/', ''
-        # Обновляем манифесты и updates.json в исходниках
+        # Update manifests and updates.json
         node update-versions.js $tagName
 
     - name: Run extension build script
@@ -60,16 +60,16 @@ jobs:
       if: env.AMO_JWT_ISSUER != '' && env.AMO_JWT_SECRET != ''
       shell: powershell
       run: |
-        # Запускаем web-ext sign с каналом unlisted (для самостоятельного распространения)
+        # Run web-ext sign with unlisted channel
         npx web-ext sign --source-dir dist/firefox --api-key $env:AMO_JWT_ISSUER --api-secret $env:AMO_JWT_SECRET --channel unlisted
         
-        # Находим подписанный файл в папке web-ext-artifacts и заменяем им DAModerator-firefox.xpi
+        # Find signed file and replace DAModerator-firefox.xpi
         $signedFile = Get-ChildItem -Path web-ext-artifacts\*.xpi | Select-Object -First 1
         if ($signedFile) {
             Copy-Item -Path $signedFile.FullName -Destination DAModerator-firefox.xpi -Force
-            Write-Host "✅ Firefox-расширение успешно подписано через AMO и скопировано в DAModerator-firefox.xpi!"
+            Write-Host "Firefox extension successfully signed via AMO and copied to DAModerator-firefox.xpi"
         } else {
-            Write-Error "❌ Подписанный файл не найден в web-ext-artifacts!"
+            Write-Error "Signed file not found in web-ext-artifacts"
         }
 
     - name: Download and Setup Ahk2Exe Compiler
@@ -105,19 +105,19 @@ jobs:
     - name: Commit and push version updates to repository
       shell: powershell
       run: |
-        # Настраиваем пользователя для коммита
+        # Configure git user
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
-        # Индексируем измененные файлы
+        # Add version files
         git add manifests/manifest.chrome.json manifests/manifest.firefox.json updates.json
         
-        # Проверяем наличие изменений и коммитим
+        # Commit and push if changed
         $status = git status --porcelain
         if ($status) {
             git commit -m "chore: auto-update manifests and updates.json version [skip ci]"
             git push origin main
-            Write-Host "✅ Изменения версии успешно отправлены в ветку main!"
+            Write-Host "Version changes successfully pushed to main branch"
         } else {
-            Write-Host "ℹ️ Изменений версии не обнаружено."
+            Write-Host "No version changes detected"
         }
