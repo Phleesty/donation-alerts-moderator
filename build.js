@@ -46,6 +46,19 @@ function build() {
     fs.mkdirSync(path.join(DIST_DIR, 'chrome'), { recursive: true });
     fs.mkdirSync(path.join(DIST_DIR, 'firefox'), { recursive: true });
 
+    // Считываем версию из аргументов командной строки (если передана)
+    const customVersion = process.argv[2];
+
+    // Функция для копирования манифеста с перезаписью версии
+    function copyManifest(srcPath, destPath, version) {
+        const manifestData = JSON.parse(fs.readFileSync(srcPath, 'utf8'));
+        if (version) {
+            manifestData.version = version;
+            console.log(`📌 Установлена версия из тега: ${version}`);
+        }
+        fs.writeFileSync(destPath, JSON.stringify(manifestData, null, 2), 'utf8');
+    }
+
     console.log('📦 Копирование исходников (src) в dist/chrome...');
     copyDirectory(SRC_DIR, path.join(DIST_DIR, 'chrome'));
 
@@ -53,15 +66,17 @@ function build() {
     copyDirectory(SRC_DIR, path.join(DIST_DIR, 'firefox'));
 
     console.log('📝 Подстановка манифеста для Chrome...');
-    fs.copyFileSync(
+    copyManifest(
         path.join(MANIFESTS_DIR, 'manifest.chrome.json'),
-        path.join(DIST_DIR, 'chrome', 'manifest.json')
+        path.join(DIST_DIR, 'chrome', 'manifest.json'),
+        customVersion
     );
 
     console.log('📝 Подстановка манифеста для Firefox...');
-    fs.copyFileSync(
+    copyManifest(
         path.join(MANIFESTS_DIR, 'manifest.firefox.json'),
-        path.join(DIST_DIR, 'firefox', 'manifest.json')
+        path.join(DIST_DIR, 'firefox', 'manifest.json'),
+        customVersion
     );
 
     console.log('🔧 Настройка popup.html для Chrome...');

@@ -3,14 +3,13 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
-      - '[0-9]+.[0-9]+.[0-9]+*'
+      - '[0-9]+.[0-9]+*'
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Имя тега релиза (например, v1.4.5)'
+        description: 'Имя тега релиза (например, 1.4.5)'
         required: true
-        default: 'v1.4.5'
+        default: '1.4.5'
 
 permissions:
   contents: write
@@ -28,6 +27,18 @@ jobs:
       with:
         node-version: 20
 
+    - name: Run version update script
+      shell: powershell
+      run: |
+        # Получаем версию из инпута или из тега
+        $tagName = "${{ github.event.inputs.tag_name }}"
+        if ([string]::IsNullOrEmpty($tagName)) {
+            $tagName = $env:GITHUB_REF_NAME
+        }
+        $tagName = $tagName -replace '^refs/tags/', ''
+        # Обновляем манифесты и updates.json в исходниках
+        node update-versions.js $tagName
+
     - name: Run extension build script
       run: node build.js
 
@@ -39,7 +50,27 @@ jobs:
     - name: Pack Firefox extension
       shell: powershell
       run: |
-        Compress-Archive -Path dist/firefox/* -DestinationPath DAModerator-firefox.xpi
+        Compress-Archive -Path dist/firefox/* -DestinationPath DAModerator-firefox.zip
+        Rename-Item -Path DAModerator-firefox.zip -NewName DAModerator-firefox.xpi
+
+    - name: Sign Firefox extension with Web-Ext (Mozilla AMO)
+      if: secrets.AMO_JWT_ISSUER != '' && secrets.AMO_JWT_SECRET != ''
+      shell: powershell
+      env:
+        AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+        AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+      run: |
+        # Запускаем web-ext sign с каналом unlisted (для самостоятельного распространения)
+        npx web-ext sign --source-dir dist/firefox --api-key $env:AMO_JWT_ISSUER --api-secret $env:AMO_JWT_SECRET --channel unlisted
+        
+        # Находим подписанный файл в папке web-ext-artifacts и заменяем им DAModerator-firefox.xpi
+        $signedFile = Get-ChildItem -Path web-ext-artifacts\*.xpi | Select-Object -First 1
+        if ($signedFile) {
+            Copy-Item -Path $signedFile.FullName -Destination DAModerator-firefox.xpi -Force
+            Write-Host "✅ Firefox-расширение успешно подписано через AMO и скопировано в DAModerator-firefox.xpi!"
+        } else {
+            Write-Error "❌ Подписанный файл не найден в web-ext-artifacts!"
+        }
 
     - name: Download and Setup Ahk2Exe Compiler
       shell: powershell
@@ -70,3 +101,23 @@ jobs:
         gh release create $tagName DAModerator-chrome.zip DAModerator-firefox.xpi AHK/DAModerator.ahk DAModerator.exe `
           --title "Релиз $tagName" `
           --notes "Автоматический релиз версии $tagName. Содержит готовые расширения для Chrome/Firefox и универсальный AHK-скрипт."
+
+    - name: Commit and push version updates to repository
+      shell: powershell
+      run: |
+        # Настраиваем пользователя для коммита
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Индексируем измененные файлы
+        git add manifests/manifest.chrome.json manifests/manifest.firefox.json updates.json
+        
+        # Проверяем наличие изменений и коммитим
+        $status = git status --porcelain
+        if ($status) {
+            git commit -m "chore: auto-update manifests and updates.json version [skip ci]"
+            git push origin main
+            Write-Host "✅ Изменения версии успешно отправлены в ветку main!"
+        } else {
+            Write-Host "ℹ️ Изменений версии не обнаружено."
+        }

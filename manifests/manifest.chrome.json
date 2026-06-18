@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DA Moderator",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Звуковые оповещения, выбор кнопки для подтверждения донатов, автоматическое подтверждение донатов",
   "icons": {
     "16": "icons/icon16.png",
@@ -11,9 +11,15 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.donationalerts.com/widget/lastdonations*"],
-      "js": ["content.js"],
-      "css": ["modal.css"]
+      "matches": [
+        "https://www.donationalerts.com/widget/lastdonations*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "modal.css"
+      ]
     }
   ],
   "background": {
@@ -47,7 +53,9 @@
         "fonts/Geologica-SemiBold.ttf",
         "fonts/Geologica-Bold.ttf"
       ],
-      "matches": ["https://www.donationalerts.com/*"]
+      "matches": [
+        "https://www.donationalerts.com/*"
+      ]
     }
   ]
 }
