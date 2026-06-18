@@ -75,8 +75,14 @@ jobs:
     - name: Download and Setup Ahk2Exe Compiler
       shell: powershell
       run: |
-        # Скачиваем стабильный компилятор Ahk2Exe
-        Invoke-WebRequest -Uri "https://github.com/AutoHotkey/Ahk2Exe/releases/download/Ahk2Exe1.1.37.02/Ahk2Exe1.1.37.02.zip" -OutFile "Ahk2Exe.zip"
+        # Get latest release info from GitHub API
+        $release = Invoke-RestMethod -Uri "https://api.github.com/repos/AutoHotkey/Ahk2Exe/releases/latest"
+        $asset = $release.assets | Where-Object { $_.name -like "Ahk2Exe*.zip" } | Select-Object -First 1
+        $downloadUrl = $asset.browser_download_url
+        Write-Host "Downloading Ahk2Exe from: $downloadUrl"
+        
+        # Download and extract compiler
+        Invoke-WebRequest -Uri $downloadUrl -OutFile "Ahk2Exe.zip"
         Expand-Archive -Path "Ahk2Exe.zip" -DestinationPath "Ahk2ExeCompiler"
 
     - name: Compile Universal AHK Script to EXE
