@@ -72,6 +72,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ ok: true, data: json });
           break;
         }
+        case "OPEN_LINK": {
+          chrome.windows.create({
+            url: message.url,
+            state: "maximized"
+          });
+          sendResponse({ ok: true });
+          break;
+        }
         default:
           break;
       }

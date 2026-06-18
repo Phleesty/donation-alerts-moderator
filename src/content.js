@@ -120,6 +120,11 @@ let volumeCache = 0.5; // 0..1
 let selectedSoundUrlCache = "";
 const DEFAULT_SOUND_URL = "sounds/doorbell.mp3";
 
+// Кэш настроек звуков для отдельных категорий, перехвата ссылок и превью YouTube
+let soundCategorySettings = {};
+let openLinksExternalCache = false;
+let enableYoutubePreviewsCache = true;
+
 // Инициализация AudioContext — до загрузки настроек, чтобы избежать гонок
 let audioContext = (() => {
   try {
@@ -258,7 +263,29 @@ const loadSettings = () => {
     // Загрузка настроек звука (в кэш) и предзагрузка звука
     if (typeof data.soundEnabled !== "undefined") soundEnabledCache = !!data.soundEnabled;
     if (typeof data.volume !== "undefined") volumeCache = Number(data.volume) / 100;
-    
+
+    // Загрузка настроек звуков для категорий (по умолчанию включены - true)
+    const soundCategories = ["all", "1", "6", "19", "17", "13"];
+    soundCategorySettings = {};
+    soundCategories.forEach((cat) => {
+      const key = `sound-alert_type-${cat}`;
+      soundCategorySettings[cat] = typeof data[key] !== "undefined" ? !!data[key] : true;
+    });
+
+    // Загрузка настроек перехвата ссылок
+    if (typeof data.openLinksInNewWindow !== "undefined") {
+      openLinksExternalCache = !!data.openLinksInNewWindow;
+    } else {
+      openLinksExternalCache = false;
+    }
+
+    // Загрузка настроек превью YouTube
+    if (typeof data.enableYoutubePreviews !== "undefined") {
+      enableYoutubePreviewsCache = !!data.enableYoutubePreviews;
+    } else {
+      enableYoutubePreviewsCache = true;
+    }
+
     const targetSound = data.selectedSound ? migrateSoundUrl(data.selectedSound) : DEFAULT_SOUND_URL;
     preloadSelectedSound(targetSound);
   });
@@ -270,11 +297,30 @@ const shouldPlaySound = (alert) => {
   const showNowButton = alert.querySelector(".action-button-item.show-now");
   const isShowNowVisible = !!(showNowButton && showNowButton.offsetParent !== null && showNowButton.style.display !== "none");
 
+  // Проверяем, включен ли звук для данной категории оповещений
+  let isSoundEnabledForCategory = true;
+  if (typeof soundCategorySettings["all"] !== "undefined" && !soundCategorySettings["all"]) {
+    isSoundEnabledForCategory = false;
+  } else {
+    // Определяем категорию для текущего alertType
+    let category = null;
+    if (["1", "11", "32", "12"].includes(alertType)) category = "1"; // Донаты
+    else if (["6"].includes(alertType)) category = "6"; // Фолловы
+    else if (["19"].includes(alertType)) category = "19"; // Награды
+    else if (["17", "18"].includes(alertType)) category = "17"; // Рейды
+    else if (["13", "4", "14", "15", "16", "7", "10"].includes(alertType)) category = "13"; // Подписки
+
+    if (category && typeof soundCategorySettings[category] !== "undefined") {
+      isSoundEnabledForCategory = soundCategorySettings[category];
+    }
+  }
+
   return (
     !alert.dataset.soundPlayed &&
     isShowNowVisible &&
     !autoApproveSettings[alertType] &&
-    !autoSkipSettings[alertType]
+    !autoSkipSettings[alertType] &&
+    isSoundEnabledForCategory
   );
 };
 
@@ -370,7 +416,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 // === 6.5. YouTube Превью (без API-ключа) ===
-const processedYoutubeElements = new WeakSet();
+let processedYoutubeElements = new WeakSet();
 const youtubeCache = new Map();
 
 function extractVideoId(url) {
@@ -438,6 +484,7 @@ function createPreviewContainer() {
 }
 
 async function processYoutubePreviews(eventEl) {
+  if (!enableYoutubePreviewsCache) return;
   if (processedYoutubeElements.has(eventEl)) return;
   processedYoutubeElements.add(eventEl);
 
@@ -559,6 +606,21 @@ chrome.storage.onChanged.addListener((changes) => {
   if (changes.soundEnabled) soundEnabledCache = !!changes.soundEnabled.newValue;
   if (changes.volume) volumeCache = Number(changes.volume.newValue) / 100;
   if (changes.selectedSound) preloadSelectedSound(changes.selectedSound.newValue);
+  
+  if (changes.enableYoutubePreviews) {
+    const isEnabled = !!changes.enableYoutubePreviews.newValue;
+    enableYoutubePreviewsCache = isEnabled;
+    
+    if (!isEnabled) {
+      // Пользователь выключил превью: удаляем все созданные контейнеры со страницы
+      document.querySelectorAll(".yt-preview-container").forEach((el) => el.remove());
+      processedYoutubeElements = new WeakSet();
+    } else {
+      // Пользователь включил превью: запускаем сканирование заново
+      scanYoutube();
+    }
+  }
+
   loadSettings();
 });
 
@@ -687,3 +749,15 @@ if (document.readyState === "loading") {
 } else if (window.location.href.includes("https://www.donationalerts.com/widget/lastdonations")) {
   showSoundAlertModal();
 }
+
+// === 10. Перехват кликов по ссылкам для открытия в новом окне во весь экран ===
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("a");
+  if (link && link.href) {
+    if (openLinksExternalCache) {
+      event.preventDefault();
+      event.stopPropagation();
+      chrome.runtime.sendMessage({ type: "OPEN_LINK", url: link.href });
+    }
+  }
+}, true); // capturing фаза, чтобы перехватить до стандартных обработчиков страницы

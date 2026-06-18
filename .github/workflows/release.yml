@@ -5,6 +5,12 @@ on:
     tags:
       - 'v*'
       - '[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Имя тега релиза (например, v1.4.5)'
+        required: true
+        default: 'v1.4.5'
 
 permissions:
   contents: write
@@ -53,7 +59,14 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # Определяем имя тега: либо из события push, либо из инпута workflow_dispatch
+        $tagName = "${{ github.event.inputs.tag_name }}"
+        if ([string]::IsNullOrEmpty($tagName)) {
+            $tagName = $env:GITHUB_REF_NAME
+        }
+        $tagName = $tagName -replace '^refs/tags/', ''
+
         # Используем GitHub CLI для создания релиза и загрузки 4 файлов
-        gh release create $env:GITHUB_REF_NAME DAModerator-chrome.zip DAModerator-firefox.xpi AHK/DAModerator.ahk DAModerator.exe `
-          --title "Релиз $env:GITHUB_REF_NAME" `
-          --notes "Автоматический релиз версии $env:GITHUB_REF_NAME. Содержит готовые расширения для Chrome/Firefox и универсальный AHK-скрипт."
+        gh release create $tagName DAModerator-chrome.zip DAModerator-firefox.xpi AHK/DAModerator.ahk DAModerator.exe `
+          --title "Релиз $tagName" `
+          --notes "Автоматический релиз версии $tagName. Содержит готовые расширения для Chrome/Firefox и универсальный AHK-скрипт."

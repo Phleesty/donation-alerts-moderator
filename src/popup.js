@@ -124,10 +124,39 @@ document.addEventListener("DOMContentLoaded", () => {
     saveCheckboxState(oppositeAllCheckbox);
   };
 
+  // --- Обработчики для звуков категорий ---
+  const soundCheckboxes = document.querySelectorAll("input[type='checkbox'][id^='sound-alert_type-']");
+  const soundAllCheckbox = document.getElementById("sound-alert_type-all");
+  const soundCategoryCheckboxes = document.querySelectorAll("input[type='checkbox'][id^='sound-alert_type-']:not([id*='all'])");
+
+  const saveSoundCheckboxState = (cb) => {
+    chrome.storage.local.set({ [cb.id]: cb.checked });
+  };
+
+  const handleSoundCheckboxChange = (event) => {
+    const changed = event.target;
+    saveSoundCheckboxState(changed);
+
+    // Проверяем "Все"
+    const allChecked = Array.from(soundCategoryCheckboxes).every(cb => cb.checked);
+    soundAllCheckbox.checked = allChecked;
+    saveSoundCheckboxState(soundAllCheckbox);
+  };
+
+  const handleSoundAllCheckboxChange = (event) => {
+    const checked = soundAllCheckbox.checked;
+    soundCategoryCheckboxes.forEach(cb => {
+      cb.checked = checked;
+      saveSoundCheckboxState(cb);
+    });
+    saveSoundCheckboxState(soundAllCheckbox);
+  };
+
   // Инициализация состояния чекбоксов
-  const checkboxes = document.querySelectorAll("input[type='checkbox']");
   chrome.storage.local.get(null, (data) => {
-    checkboxes.forEach((checkbox) => {
+    // 1. Инициализируем чекбоксы автоподтверждения и автопропуска
+    const autoCheckboxes = document.querySelectorAll("input[type='checkbox'][id^='data-alert_type-']");
+    autoCheckboxes.forEach((checkbox) => {
       if (data.hasOwnProperty(checkbox.id)) {
         checkbox.checked = data[checkbox.id];
       }
@@ -136,6 +165,45 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         checkbox.addEventListener("change", handleCheckboxChange);
       }
+    });
+
+    // 2. Инициализируем звуковые чекбоксы (по умолчанию true)
+    soundCheckboxes.forEach((cb) => {
+      if (data.hasOwnProperty(cb.id)) {
+        cb.checked = data[cb.id];
+      } else {
+        cb.checked = true; // По умолчанию включено
+        chrome.storage.local.set({ [cb.id]: true });
+      }
+      if (cb.id.includes("all")) {
+        cb.addEventListener("change", handleSoundAllCheckboxChange);
+      } else {
+        cb.addEventListener("change", handleSoundCheckboxChange);
+      }
+    });
+
+    // 3. Инициализируем чекбокс дополнительных настроек (по умолчанию false)
+    const openLinksCb = document.getElementById("open-links-new-window");
+    if (data.hasOwnProperty("openLinksInNewWindow")) {
+      openLinksCb.checked = data.openLinksInNewWindow;
+    } else {
+      openLinksCb.checked = false;
+      chrome.storage.local.set({ openLinksInNewWindow: false });
+    }
+    openLinksCb.addEventListener("change", (e) => {
+      chrome.storage.local.set({ openLinksInNewWindow: e.target.checked });
+    });
+
+    // 4. Инициализируем чекбокс включения превью YouTube (по умолчанию true)
+    const ytPreviewsCb = document.getElementById("enable-youtube-previews");
+    if (data.hasOwnProperty("enableYoutubePreviews")) {
+      ytPreviewsCb.checked = data.enableYoutubePreviews;
+    } else {
+      ytPreviewsCb.checked = true;
+      chrome.storage.local.set({ enableYoutubePreviews: true });
+    }
+    ytPreviewsCb.addEventListener("change", (e) => {
+      chrome.storage.local.set({ enableYoutubePreviews: e.target.checked });
     });
   });
 

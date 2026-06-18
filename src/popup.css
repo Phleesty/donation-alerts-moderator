@@ -23,6 +23,7 @@
 
 body {
     width: {{BODY_WIDTH}};
+    {{BODY_STYLE_EXTRA}}
     margin: 20px;
     background-color: #282828;
     color: white;
@@ -421,6 +422,28 @@ input:focus + .slider {
 }
 
 .custom-select-options::-webkit-scrollbar-thumb:hover {
+  background: #f46b31;
+}
+
+.sound-settings {
+  margin-bottom: 18px;
+}
+
+/* Стилизация скроллбара для всего попапа (body) */
+body::-webkit-scrollbar {
+  width: 6px;
+}
+
+body::-webkit-scrollbar-track {
+  background: #282828;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: #48484e;
+  border-radius: 3px;
+}
+
+body::-webkit-scrollbar-thumb:hover {
   background: #f46b31;
 }
 
