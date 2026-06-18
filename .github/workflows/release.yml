@@ -60,8 +60,8 @@ jobs:
       if: env.AMO_JWT_ISSUER != '' && env.AMO_JWT_SECRET != ''
       shell: powershell
       run: |
-        # Run web-ext sign with unlisted channel and redirect output to a file
-        npx web-ext sign --source-dir dist/firefox --api-key $env:AMO_JWT_ISSUER --api-secret $env:AMO_JWT_SECRET --channel unlisted > web-ext-log.txt 2>&1
+        # Run web-ext sign inside cmd to prevent PowerShell NativeCommandError on stderr redirect
+        cmd /c "npx web-ext sign --source-dir dist/firefox --api-key %AMO_JWT_ISSUER% --api-secret %AMO_JWT_SECRET% --channel unlisted > web-ext-log.txt 2>&1"
         $exitCode = $LASTEXITCODE
         
         # Display the log contents in the console
