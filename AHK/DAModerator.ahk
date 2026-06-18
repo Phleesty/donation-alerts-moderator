@@ -1,206 +1,152 @@
 ﻿#NoEnv
 #SingleInstance Force
-SetTitleMatchMode, 2 ; Позволяет искать окна по частичному совпадению заголовка
 
-; === Путь к конфигурационному файлу ===
+; Определяем путь к папке для хранения конфигурационного файла
 ConfigDir := A_AppData "\DA Moderator"
 ConfigFile := ConfigDir "\config.ini"
 
-; Создаем папку для конфига, если она не существует
+; Создаем папку, если она не существует
 if !FileExist(ConfigDir)
     FileCreateDir, %ConfigDir%
 
-; Настройка системного трея
 Menu, Tray, Click, 1
 Menu, Tray, NoStandard
 Menu, Tray, Add, Изменить настройки, ShowGui
 Menu, Tray, Add, Выход, ExitApp
 Menu, Tray, Default, Изменить настройки
 
-; === Значения по умолчанию ===
-DefaultUserBind1 := "!a"       ; Alt + A для подтверждения
-DefaultMouseBind1 := "XButton2" ; Боковая кнопка мыши 2
-DefaultUserBind2 := "!s"       ; Alt + S для пропуска
+DefaultUserBind1 := "!a"
+DefaultMouseBind1 := "XButton2"
+DefaultUserBind2 := "!s"
 DefaultMouseBind2 := ""
 DefaultURL := ""
-DefaultBrowserPath := ""       ; Если пусто — запускается системный браузер по умолчанию
-DefaultWindowTitle := "Last alerts - DonationAlerts"
+DefaultChromePath := "C:\Program Files\Google\Chrome\Application\chrome.exe"
 
-; Загрузка настроек при старте
 if !FileExist(ConfigFile) {
     Gosub, ResetSettings
 } else {
-    Gosub, LoadSettings
-    
-    ; Открываем ссылку, если она указана
-    if (URL != "") {
-        if (BrowserPath != "" && FileExist(BrowserPath)) {
-            Run, "%BrowserPath%" --new-window "%URL%"
-        } else {
-            ; Запуск в браузере по умолчанию
-            Run, %URL%
-        }
+    IniRead, UserBind1, %ConfigFile%, Settings, UserBind1
+    IniRead, MouseBind1, %ConfigFile%, Settings, MouseBind1
+    IniRead, UserBind2, %ConfigFile%, Settings, UserBind2
+    IniRead, MouseBind2, %ConfigFile%, Settings, MouseBind2
+    IniRead, URL, %ConfigFile%, Settings, URL
+    IniRead, ChromePath, %ConfigFile%, Settings, ChromePath
+
+    ; Если ссылка не указана, открываем настройки
+    if (URL = "") {
+        Gosub, ShowGui
+    } else {
+        ; Если ссылка указана, открываем её в указанном Google Chrome (или по умолчанию)
+        ActualPath := (ChromePath = "" ? DefaultChromePath : ChromePath)
+        Run, "%ActualPath%" --new-window "%URL%"
+        Gosub, SetHotkeys
     }
-    Gosub, SetHotkeys
 }
+
 return
 
-; === Загрузка настроек ===
-LoadSettings:
-    IniRead, UserBind1, %ConfigFile%, Settings, UserBind1, %DefaultUserBind1%
-    IniRead, MouseBind1, %ConfigFile%, Settings, MouseBind1, %DefaultMouseBind1%
-    IniRead, UserBind2, %ConfigFile%, Settings, UserBind2, %DefaultUserBind2%
-    IniRead, MouseBind2, %ConfigFile%, Settings, MouseBind2, %DefaultMouseBind2%
-    IniRead, URL, %ConfigFile%, Settings, URL, %DefaultURL%
-    IniRead, BrowserPath, %ConfigFile%, Settings, BrowserPath, %DefaultBrowserPath%
-    IniRead, WindowTitle, %ConfigFile%, Settings, WindowTitle, %DefaultWindowTitle%
-return
-
-; === Окно настроек (GUI) ===
 ShowGui:
-    ; Отключаем хоткеи на время редактирования
-    Gosub, DisableHotkeys
+    ; Отключаем только те горячие клавиши, которые были назначены
+    SafeHotkey(UserBind1, "AutoAccept", "Off")
+    SafeHotkey(MouseBind1, "AutoAccept", "Off")
+    SafeHotkey(UserBind2, "AutoSkip", "Off")
+    SafeHotkey(MouseBind2, "AutoSkip", "Off")
 
+    ; Создание GUI
     Gui, Destroy
-    Gui, +AlwaysOnTop
     Gui, Add, Text, x10 y13 w160, Автопринятие алерта:
     Gui, Add, Hotkey, x+1 vUserBind1 y10 w100, %UserBind1%
     Gui, Add, Text, x+10 y13, или
     Gui, Add, ComboBox, x+10 vMouseBind1 y10 w100, Нет|XButton1|XButton2
     GuiControl, ChooseString, MouseBind1, % (MouseBind1 = "" ? "Нет" : MouseBind1)
-
     Gui, Add, Text, x10 y48 w160, Автопропуск алерта:
     Gui, Add, Hotkey, x+1 vUserBind2 y45 w100, %UserBind2%
     Gui, Add, Text, x+10 y48, или
     Gui, Add, ComboBox, x+10 vMouseBind2 y45 w100, Нет|XButton1|XButton2
     GuiControl, ChooseString, MouseBind2, % (MouseBind2 = "" ? "Нет" : MouseBind2)
-
     Gui, Add, Text, x10 y83 w160, Ссылка для открытия:
-    Gui, Add, Edit, x+1 vURL y80 w280, %URL%
-
-    Gui, Add, Text, x10 y113 w160, Путь до браузера (опционально):
-    Gui, Add, Edit, x+1 vBrowserPath y110 w222, %BrowserPath%
-    Gui, Add, Button, gBrowseBrowser x+10 y109 w50, Обзор
-
-    Gui, Add, Text, x10 y143 w160, Заголовок окна виджета:
-    Gui, Add, Edit, x+1 vWindowTitle y140 w280, %WindowTitle%
-
-    Gui, Add, Button, gResetSettings x114 y175 w140, Сбросить настройки
+    Gui, Add, Edit, x+1 vURL y80 w280,
+    Gui, Add, Text, x10 y113 w160, Путь до браузера:
+    Gui, Add, Edit, x+1 vChromePath y110 w222 HwndhChromePath,
+    Gui, Add, Button, gBrowseChrome x+10 y109 w50, Обзор
+    Gui, Add, Button, gResetSettings x214 y+15 w140, Сбросить настройки
     Gui, Add, Button, Default gSubmit x+10 w90, Сохранить
-    Gui, Show, w465 h210, DA Moderator - Настройки
-return
+    Gui, Show, w465 h180, DA Moderator - Настройки
 
-BrowseBrowser:
-    FileSelectFile, SelectedPath, , , Выберите исполняемый файл браузера, EXE-файлы (*.exe)
-    if (SelectedPath != "")
-        GuiControl,, BrowserPath, %SelectedPath%
+    ; Устанавливаем плейсхолдер "по умолчанию" для поля выбора пути браузера
+    Placeholder := "по умолчанию"
+    SendMessage, 0x1501, 1, &Placeholder, , ahk_id %hChromePath%
+
+    ; Устанавливаем текст в элементы управления Edit после их создания
+    GuiControl,, URL, %URL%
+    GuiControl,, ChromePath, %ChromePath%
 return
 
 Submit:
     Gui, Submit, Hide
+    ; Если выбрано "Нет", сохраняем пустое значение
     MouseBind1 := (MouseBind1 = "Нет" ? "" : MouseBind1)
     MouseBind2 := (MouseBind2 = "Нет" ? "" : MouseBind2)
-    
     IniWrite, %UserBind1%, %ConfigFile%, Settings, UserBind1
     IniWrite, %MouseBind1%, %ConfigFile%, Settings, MouseBind1
     IniWrite, %UserBind2%, %ConfigFile%, Settings, UserBind2
     IniWrite, %MouseBind2%, %ConfigFile%, Settings, MouseBind2
     IniWrite, %URL%, %ConfigFile%, Settings, URL
-    IniWrite, %BrowserPath%, %ConfigFile%, Settings, BrowserPath
-    IniWrite, %WindowTitle%, %ConfigFile%, Settings, WindowTitle
+    IniWrite, %ChromePath%, %ConfigFile%, Settings, ChromePath
 
+    ; Активируем горячие клавиши
     Gosub, SetHotkeys
 return
 
-; === Установка горячих клавиш ===
 SetHotkeys:
-    if (UserBind1 != "")
-        Hotkey, %UserBind1%, AutoAccept, On
-    if (MouseBind1 != "")
-        Hotkey, %MouseBind1%, AutoAccept, On
-    if (UserBind2 != "")
-        Hotkey, %UserBind2%, AutoSkip, On
-    if (MouseBind2 != "")
-        Hotkey, %MouseBind2%, AutoSkip, On
+    ; Назначаем только те горячие клавиши, которые заданы
+    SafeHotkey(UserBind1, "AutoAccept", "On")
+    SafeHotkey(MouseBind1, "AutoAccept", "On")
+    SafeHotkey(UserBind2, "AutoSkip", "On")
+    SafeHotkey(MouseBind2, "AutoSkip", "On")
 return
 
-; === Отключение горячих клавиш ===
-DisableHotkeys:
-    if (UserBind1 != "")
-        Hotkey, %UserBind1%, AutoAccept, Off
-    if (MouseBind1 != "")
-        Hotkey, %MouseBind1%, AutoAccept, Off
-    if (UserBind2 != "")
-        Hotkey, %UserBind2%, AutoSkip, Off
-    if (MouseBind2 != "")
-        Hotkey, %MouseBind2%, AutoSkip, Off
+BrowseChrome:
+    FileSelectFile, SelectedPath, , , Выберите chrome.exe, EXE-файлы (*.exe)
+    if (SelectedPath != "")
+        GuiControl,, ChromePath, %SelectedPath%
 return
 
 ResetSettings:
+    ; Устанавливаем настройки по умолчанию
     UserBind1 := DefaultUserBind1
     MouseBind1 := DefaultMouseBind1
     UserBind2 := DefaultUserBind2
     MouseBind2 := DefaultMouseBind2
     URL := DefaultURL
-    BrowserPath := DefaultBrowserPath
-    WindowTitle := DefaultWindowTitle
+    ChromePath := DefaultChromePath
 
+    ; Сохраняем настройки по умолчанию в config.ini
     IniWrite, %UserBind1%, %ConfigFile%, Settings, UserBind1
     IniWrite, %MouseBind1%, %ConfigFile%, Settings, MouseBind1
     IniWrite, %UserBind2%, %ConfigFile%, Settings, UserBind2
     IniWrite, %MouseBind2%, %ConfigFile%, Settings, MouseBind2
     IniWrite, %URL%, %ConfigFile%, Settings, URL
-    IniWrite, %BrowserPath%, %ConfigFile%, Settings, BrowserPath
-    IniWrite, %WindowTitle%, %ConfigFile%, Settings, WindowTitle
+    IniWrite, %ChromePath%, %ConfigFile%, Settings, ChromePath
 
+    ; Перезапускаем GUI с новыми значениями
     Gosub, ShowGui
 return
 
-; === Выполнение команд модерации ===
 AutoAccept:
-    Gosub, FindAndTriggerAlert
-    if (WidgetActive) {
-        Send, ^+{NumpadDiv} ; Отправляем сочетание клавиш для подтверждения
-        Gosub, ReturnFocus
-    }
+    WinGet, activeWindow, ID, A
+    WinActivate, Last alerts - DonationAlerts - Google Chrome
+    WinWaitActive, Last alerts - DonationAlerts - Google Chrome
+    Send, ^+{NumpadDiv}
+    WinActivate, ahk_id %activeWindow%
 return
 
 AutoSkip:
-    Gosub, FindAndTriggerAlert
-    if (WidgetActive) {
-        Send, ^+{NumpadMult} ; Отправляем сочетание клавиш для пропуска
-        Gosub, ReturnFocus
-    }
-return
-
-; Вспомогательный поиск окна виджета и передача фокуса
-FindAndTriggerAlert:
-    WidgetActive := false
-    ; Проверяем, существует ли окно виджета
-    IfWinExist, %WindowTitle%
-    {
-        ; Запоминаем текущее активное окно пользователя
-        WinGet, activeWindow, ID, A
-        
-        ; Активируем окно виджета
-        WinActivate, %WindowTitle%
-        WinWaitActive, %WindowTitle%, , 2 ; Ждем активации не более 2 секунд
-        
-        if !ErrorLevel {
-            WidgetActive := true
-        }
-    }
-    else
-    {
-        MsgBox, 48, Ошибка, Окно виджета "%WindowTitle%" не найдено!`nУбедитесь, что вкладка DonationAlerts открыта в вашем браузере.
-    }
-return
-
-; Возврат фокуса на предыдущее приложение
-ReturnFocus:
-    if (activeWindow) {
-        WinActivate, ahk_id %activeWindow%
-    }
+    WinGet, activeWindow, ID, A
+    WinActivate, Last alerts - DonationAlerts - Google Chrome
+    WinWaitActive, Last alerts - DonationAlerts - Google Chrome
+    Send, ^+{NumpadMult}
+    WinActivate, ahk_id %activeWindow%
 return
 
 ExitApp:
@@ -209,6 +155,23 @@ return
 
 GuiClose:
     Gui, Hide
-    Gosub, LoadSettings
+    ; Восстанавливаем значения из файла config.ini
+    IniRead, UserBind1, %ConfigFile%, Settings, UserBind1
+    IniRead, MouseBind1, %ConfigFile%, Settings, MouseBind1
+    IniRead, UserBind2, %ConfigFile%, Settings, UserBind2
+    IniRead, MouseBind2, %ConfigFile%, Settings, MouseBind2
+    IniRead, URL, %ConfigFile%, Settings, URL
+    IniRead, ChromePath, %ConfigFile%, Settings, ChromePath
+
+    ; Активируем горячие клавиши
     Gosub, SetHotkeys
 return
+
+; Безопасная установка горячих клавиш с перехватом ошибок (например, невалидные имена клавиш при русской раскладке)
+SafeHotkey(KeyName, LabelName, Options) {
+    if (KeyName = "")
+        return
+    try {
+        Hotkey, %KeyName%, %LabelName%, %Options%
+    }
+}

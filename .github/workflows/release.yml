@@ -142,6 +142,7 @@ jobs:
       shell: powershell
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_NOTES_TEMPLATE: "Автоматический релиз версии {VERSION}. Содержит готовые расширения для Chrome/Firefox и универсальный AHK-скрипт."
       run: |
         # Force UTF-8 encoding for console output and commands to prevent Cyrillic encoding issues
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -154,13 +155,18 @@ jobs:
         }
         $tagName = $tagName -replace '^refs/tags/', ''
 
+        # Подставляем версию в шаблон описания релиза
+        $notes = $env:RELEASE_NOTES_TEMPLATE -replace '\{VERSION\}', $tagName
+
         # Используем GitHub CLI для создания релиза и загрузки 4 файлов
         gh release create $tagName DAModerator-chrome.zip DAModerator-firefox.xpi AHK/DAModerator.ahk DAModerator.exe `
           --title "$tagName" `
-          --notes "Автоматический релиз версии $tagName. Содержит готовые расширения для Chrome/Firefox и универсальный AHK-скрипт."
+          --notes "$notes"
 
     - name: Commit and push version updates to repository
       shell: powershell
+      env:
+        COMMIT_MSG: "🔧 chore: автообновление версии в манифестах и updates.json [skip ci]"
       run: |
         # Force UTF-8 encoding for git commands
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -176,7 +182,7 @@ jobs:
         # Commit and push if changed
         $status = git status --porcelain
         if ($status) {
-            git commit -m "🔧 chore: автообновление версии в манифестах и updates.json [skip ci]"
+            git commit -m "$env:COMMIT_MSG"
             git push origin main
             Write-Host "Version changes successfully pushed to main branch"
         } else {
