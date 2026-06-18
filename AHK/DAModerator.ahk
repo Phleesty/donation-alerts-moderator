@@ -22,6 +22,7 @@ DefaultUserBind2 := "!s"
 DefaultMouseBind2 := ""
 DefaultURL := ""
 DefaultChromePath := "" ; По умолчанию путь пустой (будет использоваться браузер по умолчанию)
+ChromeDefaultExe := "C:\Program Files\Google\Chrome\Application\chrome.exe" ; Стандартный путь к Chrome
 
 if !FileExist(ConfigFile) {
     Gosub, ResetSettings
@@ -33,8 +34,12 @@ if !FileExist(ConfigFile) {
     IniRead, URL, %ConfigFile%, Settings, URL
     IniRead, ChromePath, %ConfigFile%, Settings, ChromePath
 
-    ; Если ссылка не указана, открываем настройки
-    if (URL = "") {
+    ; Проверяем валидность ссылки (она должна начинаться с http:// или https://)
+    IsValidURL := (SubStr(URL, 1, 7) = "http://" || SubStr(URL, 1, 8) = "https://")
+
+    ; Если ссылка не указана или невалидна, открываем настройки
+    if (!IsValidURL) {
+        URL := "" ; Очищаем невалидную ссылку для плейсхолдера
         Gosub, ShowGui
     } else {
         ; Если указан конкретный путь к браузеру, открываем в нем. Иначе в браузере по умолчанию.
@@ -77,21 +82,29 @@ ShowGui:
     Gui, Add, Button, Default gSubmit x+10 w90, Сохранить
     Gui, Show, w465 h180, DA Moderator - Настройки
 
-    ; Устанавливаем плейсхолдер "по умолчанию" для поля выбора пути браузера
+    ; Устанавливаем плейсхолдер "по умолчанию" (wParam = 0, чтобы скрывался сразу при фокусе)
     PlaceholderPath := "по умолчанию"
-    SendMessage, 0x1501, 1, &PlaceholderPath, , ahk_id %hChromePath%
+    SendMessage, 0x1501, 0, &PlaceholderPath, , ahk_id %hChromePath%
 
-    ; Устанавливаем плейсхолдер с примером ссылки для поля URL
+    ; Устанавливаем плейсхолдер с примером ссылки (wParam = 0, чтобы скрывался сразу при фокусе)
     PlaceholderURL := "https://www.donationalerts.com/widget/lastdonations?alert_type=..."
-    SendMessage, 0x1501, 1, &PlaceholderURL, , ahk_id %hURL%
+    SendMessage, 0x1501, 0, &PlaceholderURL, , ahk_id %hURL%
 
-    ; Устанавливаем text в элементы управления Edit после их создания
+    ; Устанавливаем текст в элементы управления Edit после их создания
     GuiControl,, URL, %URL%
     GuiControl,, ChromePath, %ChromePath%
 return
 
 Submit:
-    Gui, Submit, Hide
+    Gui, Submit, NoHide ; Считываем данные без закрытия GUI для валидации
+    
+    ; Валидация ссылки (если она не пустая)
+    if (URL != "" && !(SubStr(URL, 1, 7) = "http://" || SubStr(URL, 1, 8) = "https://")) {
+        MsgBox, 48, Ошибка, Ссылка для открытия должна начинаться с https:// или http://
+        return ; Прерываем сохранение, оставляя окно настроек открытым
+    }
+    
+    Gui, Hide
     ; Если выбрано "Нет", сохраняем пустое значение
     MouseBind1 := (MouseBind1 = "Нет" ? "" : MouseBind1)
     MouseBind2 := (MouseBind2 = "Нет" ? "" : MouseBind2)
