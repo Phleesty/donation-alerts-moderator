@@ -242,6 +242,11 @@ input:focus + .slider {
   margin-right: 20px;
 } */
 
+.wrapper.disabled-sound {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .category {
   position: relative;
 }

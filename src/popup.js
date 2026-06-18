@@ -95,6 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const allChecked = Array.from(categoryCheckboxes).every((checkbox) => checkbox.checked);
     allCheckbox.checked = allChecked;
     saveCheckboxState(allCheckbox);
+
+    // Синхронизируем звуковые чекбоксы с автопропуском при любом изменении автоподтверждения/автопропуска
+    const categories = ["all", "1", "6", "13", "17", "19"];
+    categories.forEach(id => syncSoundWithSkipChange(id));
   };
 
   // Обработка изменения состояния чекбокса "Все"
@@ -122,6 +126,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
     saveCheckboxState(oppositeAllCheckbox);
+
+    // Синхронизируем звуковые чекбоксы с автопропуском после изменения всех автопропусков
+    const categories = ["all", "1", "6", "13", "17", "19"];
+    categories.forEach(id => syncSoundWithSkipChange(id));
   };
 
   // --- Обработчики для звуков категорий ---
@@ -150,6 +158,54 @@ document.addEventListener("DOMContentLoaded", () => {
       saveSoundCheckboxState(cb);
     });
     saveSoundCheckboxState(soundAllCheckbox);
+  };
+
+  // Синхронизация при инициализации (восстановление блокировки и сохраненных звуков)
+  const syncSoundWithSkipInit = (id) => {
+    const skipCb = document.getElementById(`data-alert_type-${id}-skip`);
+    const soundCb = document.getElementById(`sound-alert_type-${id}`);
+    if (!skipCb || !soundCb) return;
+
+    const wrapper = soundCb.closest(".wrapper");
+
+    if (skipCb.checked) {
+      soundCb.checked = false;
+      soundCb.disabled = true;
+      if (wrapper) {
+        wrapper.classList.add("disabled-sound");
+      }
+      chrome.storage.local.set({ [soundCb.id]: false });
+    } else {
+      soundCb.disabled = false;
+      if (wrapper) {
+        wrapper.classList.remove("disabled-sound");
+      }
+    }
+  };
+
+  // Синхронизация при изменении настроек пользователем
+  const syncSoundWithSkipChange = (id) => {
+    const skipCb = document.getElementById(`data-alert_type-${id}-skip`);
+    const soundCb = document.getElementById(`sound-alert_type-${id}`);
+    if (!skipCb || !soundCb) return;
+
+    const wrapper = soundCb.closest(".wrapper");
+
+    if (skipCb.checked) {
+      soundCb.checked = false;
+      soundCb.disabled = true;
+      if (wrapper) {
+        wrapper.classList.add("disabled-sound");
+      }
+      chrome.storage.local.set({ [soundCb.id]: false });
+    } else {
+      soundCb.disabled = false;
+      soundCb.checked = true;
+      if (wrapper) {
+        wrapper.classList.remove("disabled-sound");
+      }
+      chrome.storage.local.set({ [soundCb.id]: true });
+    }
   };
 
   // Инициализация состояния чекбоксов
@@ -205,6 +261,10 @@ document.addEventListener("DOMContentLoaded", () => {
     ytPreviewsCb.addEventListener("change", (e) => {
       chrome.storage.local.set({ enableYoutubePreviews: e.target.checked });
     });
+
+    // 5. Синхронизируем состояние звуков с автопропуском при инициализации
+    const categories = ["all", "1", "6", "13", "17", "19"];
+    categories.forEach(id => syncSoundWithSkipInit(id));
   });
 
   // Выбор горячей клавиши
