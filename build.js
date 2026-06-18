@@ -78,6 +78,7 @@ function build() {
     chromeCss = chromeCss
         .replace('{{BODY_WIDTH}}', '450px')
         .replace('{{BODY_STYLE_EXTRA}}', '')
+        .replace('{{FIREFOX_ONLY_STYLE}}', '')
         .replace('{{H2_STYLE}}', ''); // В Chrome H2 по умолчанию отображается корректно
     fs.writeFileSync(chromeCssPath, chromeCss, 'utf8');
 
@@ -94,7 +95,8 @@ function build() {
     let firefoxCss = fs.readFileSync(firefoxCssPath, 'utf8');
     firefoxCss = firefoxCss
         .replace('{{BODY_WIDTH}}', '460px')
-        .replace('{{BODY_STYLE_EXTRA}}', 'height: 540px; padding-bottom: 20px; overflow-y: auto;')
+        .replace('{{BODY_STYLE_EXTRA}}', 'height: 540px; overflow-y: auto;')
+        .replace('{{FIREFOX_ONLY_STYLE}}', 'body::after { content: ""; display: block; height: 20px; width: 100%; }')
         .replace('{{H2_STYLE}}', 'h2 { all: unset; font-size: 18px; font-weight: 600; line-height: 1; }');
     fs.writeFileSync(firefoxCssPath, firefoxCss, 'utf8');
 
