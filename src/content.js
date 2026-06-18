@@ -148,10 +148,12 @@ const getAbsoluteSoundUrl = (url) => {
   return chrome.runtime.getURL(url);
 };
 
+let hasUserGesture = false;
+
 // Функция удержания вкладки и AudioContext в активном состоянии
 const keepAudioAlive = () => {
   const preventSleep = () => {
-    if (audioContext) {
+    if (audioContext && hasUserGesture) {
       if (audioContext.state === "suspended") {
         audioContext.resume().catch(() => {});
       }
@@ -332,47 +334,60 @@ const clickWithDelay = async (buttons, delay = 200) => {
   }
 };
 
+let isProcessingAlerts = false;
+
 // === 5. Обработка уведомлений ===
 const processAlerts = async () => {
-  const alerts = Array.from(document.querySelectorAll(".event.b-last-events-widget__item.moderated")).reverse();
-  const approveButtons = [];
-  const skipButtons = [];
-  const processedAlerts = new Set();
+  if (isProcessingAlerts) return;
+  isProcessingAlerts = true;
 
-  alerts.forEach((alert) => {
-    const alertType = alert.dataset.alert_type;
-    const alertId = alert.dataset.alert_id;
+  try {
+    const alerts = Array.from(document.querySelectorAll(".event.b-last-events-widget__item.moderated")).reverse();
+    const approveButtons = [];
+    const skipButtons = [];
+    const processedAlerts = new Set();
 
-    // Автоподтверждение
-    if (autoApproveSettings[alertType] && !processedAlerts.has(alertId)) {
-      const approveButton = alert.querySelector(".action-button-item.show-now");
-      if (approveButton && approveButton.offsetParent !== null && approveButton.style.display !== "none") {
-        approveButtons.push(approveButton);
-        processedAlerts.add(alertId);
+    alerts.forEach((alert) => {
+      const alertType = alert.dataset.alert_type;
+      const alertId = alert.dataset.alert_id;
+
+      // Автоподтверждение
+      if (autoApproveSettings[alertType] && !processedAlerts.has(alertId)) {
+        const approveButton = alert.querySelector(".action-button-item.show-now");
+        if (approveButton && approveButton.offsetParent !== null && approveButton.style.display !== "none") {
+          approveButtons.push(approveButton);
+          processedAlerts.add(alertId);
+        }
       }
-    }
 
-    // Автопропуск
-    if (autoSkipSettings[alertType] && !processedAlerts.has(alertId)) {
-      const skipButton = alert.querySelector(".action-button-item.skip");
-      const showNowButton = alert.querySelector(".action-button-item.show-now");
-      if (skipButton && skipButton.offsetParent !== null && skipButton.style.display !== "none" &&
-          (!showNowButton || showNowButton.style.display !== "none")) {
-        skipButtons.push(skipButton);
-        processedAlerts.add(alertId);
+      // Автопропуск
+      if (autoSkipSettings[alertType] && !processedAlerts.has(alertId)) {
+        const skipButton = alert.querySelector(".action-button-item.skip");
+        const showNowButton = alert.querySelector(".action-button-item.show-now");
+        if (skipButton && skipButton.offsetParent !== null && skipButton.style.display !== "none" &&
+            (!showNowButton || showNowButton.style.display !== "none")) {
+          skipButtons.push(skipButton);
+          processedAlerts.add(alertId);
+        }
       }
-    }
 
-    // Проверяем необходимость воспроизведения звука (без чтения из storage на каждом тике)
-    if (shouldPlaySound(alert) && soundEnabledCache) {
-      playSound(volumeCache);
-      alert.dataset.soundPlayed = "true";
-    }
-  });
+      // Резервный проигрыватель звуков для новых событий
+      if (shouldPlaySound(alert) && soundEnabledCache) {
+        playSound(volumeCache);
+        alert.dataset.soundPlayed = "true";
+      }
+    });
 
-  // Кликаем кнопки
-  await clickWithDelay(skipButtons);
-  await clickWithDelay(approveButtons);
+    // Последовательно кликаем кнопки с задержкой 200 мс
+    if (skipButtons.length > 0) {
+      await clickWithDelay(skipButtons, 200);
+    }
+    if (approveButtons.length > 0) {
+      await clickWithDelay(approveButtons, 200);
+    }
+  } finally {
+    isProcessingAlerts = false;
+  }
 };
 
 // === 6. Обработка горячих клавиш ===
@@ -704,12 +719,14 @@ const playSound = (volume) => {
     return;
   }
   const ensureRunning = () => {
-    if (audioContext.state !== "running") {
+    if (hasUserGesture && audioContext.state !== "running") {
       return audioContext.resume().catch(() => {});
     }
     return Promise.resolve();
   };
   ensureRunning().finally(() => {
+    if (!hasUserGesture) return;
+
     try {
       if (!sharedGainNode) {
         sharedGainNode = audioContext.createGain();
@@ -727,11 +744,13 @@ const playSound = (volume) => {
 // Разблокировка аудио по первым жестам пользователя (минимизирует проблемы в фоне)
 const userGestureEvents = ["click", "keydown", "pointerdown", "touchstart"]; 
 const unlockAudio = () => {
-  if (audioContext.state === "suspended") {
+  hasUserGesture = true;
+  if (audioContext && audioContext.state === "suspended") {
     audioContext.resume().catch(() => {});
   }
+  userGestureEvents.forEach((evt) => document.removeEventListener(evt, unlockAudio));
 };
-userGestureEvents.forEach((evt) => document.addEventListener(evt, unlockAudio, { once: false, passive: true }));
+userGestureEvents.forEach((evt) => document.addEventListener(evt, unlockAudio, { once: true, passive: true }));
 
 // Восстанавливаем аудио при возвращении во вкладку
 document.addEventListener("visibilitychange", () => {
