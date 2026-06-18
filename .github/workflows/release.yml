@@ -156,7 +156,7 @@ jobs:
 
         # Используем GitHub CLI для создания релиза и загрузки 4 файлов
         gh release create $tagName DAModerator-chrome.zip DAModerator-firefox.xpi AHK/DAModerator.ahk DAModerator.exe `
-          --title "Релиз $tagName" `
+          --title "$tagName" `
           --notes "Автоматический релиз версии $tagName. Содержит готовые расширения для Chrome/Firefox и универсальный AHK-скрипт."
 
     - name: Commit and push version updates to repository
