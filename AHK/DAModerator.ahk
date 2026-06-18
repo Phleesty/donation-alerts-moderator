@@ -1,4 +1,4 @@
-#NoEnv
+﻿#NoEnv
 #SingleInstance Force
 SetTitleMatchMode, 2 ; Позволяет искать окна по частичному совпадению заголовка
 
