@@ -1,5 +1,6 @@
 ﻿#NoEnv
 #SingleInstance Force
+SetTitleMatchMode, 2 ; Позволяет искать окна по частичному совпадению заголовка (нужно для мультибраузерности)
 
 ; Определяем путь к папке для хранения конфигурационного файла
 ConfigDir := A_AppData "\DA Moderator"
@@ -20,7 +21,7 @@ DefaultMouseBind1 := "XButton2"
 DefaultUserBind2 := "!s"
 DefaultMouseBind2 := ""
 DefaultURL := ""
-DefaultChromePath := "C:\Program Files\Google\Chrome\Application\chrome.exe"
+DefaultChromePath := "" ; По умолчанию путь пустой (будет использоваться браузер по умолчанию)
 
 if !FileExist(ConfigFile) {
     Gosub, ResetSettings
@@ -36,9 +37,12 @@ if !FileExist(ConfigFile) {
     if (URL = "") {
         Gosub, ShowGui
     } else {
-        ; Если ссылка указана, открываем её в указанном Google Chrome (или по умолчанию)
-        ActualPath := (ChromePath = "" ? DefaultChromePath : ChromePath)
-        Run, "%ActualPath%" --new-window "%URL%"
+        ; Если указан конкретный путь к браузеру, открываем в нем. Иначе в браузере по умолчанию.
+        if (ChromePath != "" && FileExist(ChromePath)) {
+            Run, "%ChromePath%" --new-window "%URL%"
+        } else {
+            Run, %URL%
+        }
         Gosub, SetHotkeys
     }
 }
@@ -65,7 +69,7 @@ ShowGui:
     Gui, Add, ComboBox, x+10 vMouseBind2 y45 w100, Нет|XButton1|XButton2
     GuiControl, ChooseString, MouseBind2, % (MouseBind2 = "" ? "Нет" : MouseBind2)
     Gui, Add, Text, x10 y83 w160, Ссылка для открытия:
-    Gui, Add, Edit, x+1 vURL y80 w280,
+    Gui, Add, Edit, x+1 vURL y80 w280 HwndhURL,
     Gui, Add, Text, x10 y113 w160, Путь до браузера:
     Gui, Add, Edit, x+1 vChromePath y110 w222 HwndhChromePath,
     Gui, Add, Button, gBrowseChrome x+10 y109 w50, Обзор
@@ -74,10 +78,14 @@ ShowGui:
     Gui, Show, w465 h180, DA Moderator - Настройки
 
     ; Устанавливаем плейсхолдер "по умолчанию" для поля выбора пути браузера
-    Placeholder := "по умолчанию"
-    SendMessage, 0x1501, 1, &Placeholder, , ahk_id %hChromePath%
+    PlaceholderPath := "по умолчанию"
+    SendMessage, 0x1501, 1, &PlaceholderPath, , ahk_id %hChromePath%
 
-    ; Устанавливаем текст в элементы управления Edit после их создания
+    ; Устанавливаем плейсхолдер с примером ссылки для поля URL
+    PlaceholderURL := "https://www.donationalerts.com/widget/lastdonations?alert_type=..."
+    SendMessage, 0x1501, 1, &PlaceholderURL, , ahk_id %hURL%
+
+    ; Устанавливаем text в элементы управления Edit после их создания
     GuiControl,, URL, %URL%
     GuiControl,, ChromePath, %ChromePath%
 return
@@ -135,18 +143,28 @@ return
 
 AutoAccept:
     WinGet, activeWindow, ID, A
-    WinActivate, Last alerts - DonationAlerts - Google Chrome
-    WinWaitActive, Last alerts - DonationAlerts - Google Chrome
-    Send, ^+{NumpadDiv}
-    WinActivate, ahk_id %activeWindow%
+    IfWinExist, Last alerts - DonationAlerts
+    {
+        WinActivate, Last alerts - DonationAlerts
+        WinWaitActive, Last alerts - DonationAlerts, , 2
+        if !ErrorLevel {
+            Send, ^+{NumpadDiv}
+        }
+        WinActivate, ahk_id %activeWindow%
+    }
 return
 
 AutoSkip:
     WinGet, activeWindow, ID, A
-    WinActivate, Last alerts - DonationAlerts - Google Chrome
-    WinWaitActive, Last alerts - DonationAlerts - Google Chrome
-    Send, ^+{NumpadMult}
-    WinActivate, ahk_id %activeWindow%
+    IfWinExist, Last alerts - DonationAlerts
+    {
+        WinActivate, Last alerts - DonationAlerts
+        WinWaitActive, Last alerts - DonationAlerts, , 2
+        if !ErrorLevel {
+            Send, ^+{NumpadMult}
+        }
+        WinActivate, ahk_id %activeWindow%
+    }
 return
 
 ExitApp:
