@@ -169,11 +169,11 @@ const keepAudioAlive = () => {
   };
   // Каждые 15 секунд воспроизводим микро-звук тишины
   setInterval(preventSleep, 15000);
-};
-
-// Запускаем удержание активности
-keepAudioAlive();
-
+};// Запускаем удержание активности только для Chrome/Chromium (Firefox в этом не нуждается)
+const isFirefox = navigator.userAgent.toLowerCase().includes("firefox");
+if (!isFirefox) {
+  keepAudioAlive();
+}
 // Предзагрузка и декодирование выбранного звука
 let currentSoundAbortController;
 const preloadSelectedSound = (rawSoundUrl) => {
