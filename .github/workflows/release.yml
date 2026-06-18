@@ -60,23 +60,40 @@ jobs:
       if: env.AMO_JWT_ISSUER != '' && env.AMO_JWT_SECRET != ''
       shell: powershell
       run: |
-        # Run web-ext sign with unlisted channel
-        npx web-ext sign --source-dir dist/firefox --api-key $env:AMO_JWT_ISSUER --api-secret $env:AMO_JWT_SECRET --channel unlisted
+        # Run web-ext sign with unlisted channel and redirect output to a file
+        npx web-ext sign --source-dir dist/firefox --api-key $env:AMO_JWT_ISSUER --api-secret $env:AMO_JWT_SECRET --channel unlisted > web-ext-log.txt 2>&1
+        $exitCode = $LASTEXITCODE
         
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "Warning: web-ext sign failed. Attempting to download already signed XPI from Mozilla AMO..."
-            
-            # Determine tag name
-            $tagName = "${{ github.event.inputs.tag_name }}"
-            if ([string]::IsNullOrEmpty($tagName)) {
-                $tagName = $env:GITHUB_REF_NAME
+        # Display the log contents in the console
+        if (Test-Path web-ext-log.txt) {
+            Get-Content web-ext-log.txt
+        }
+        
+        if ($exitCode -ne 0) {
+            $logContent = ""
+            if (Test-Path web-ext-log.txt) {
+                $logContent = Get-Content web-ext-log.txt -Raw
             }
-            $tagName = $tagName -replace '^refs/tags/', ''
             
-            # Run download script
-            node download-signed.js $tagName DAModerator-firefox.xpi
-            if ($LASTEXITCODE -ne 0) {
-                Write-Error "Failed to sign or download the Firefox extension."
+            # Only fallback if the error is a version conflict/already exists
+            if ($logContent -match "already exists" -or $logContent -match "Conflict") {
+                Write-Host "Warning: Version already exists on Mozilla AMO. Attempting to download the already signed XPI..."
+                
+                # Determine tag name
+                $tagName = "${{ github.event.inputs.tag_name }}"
+                if ([string]::IsNullOrEmpty($tagName)) {
+                    $tagName = $env:GITHUB_REF_NAME
+                }
+                $tagName = $tagName -replace '^refs/tags/', ''
+                
+                # Run download script
+                node download-signed.js $tagName DAModerator-firefox.xpi
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Error "Failed to download the already signed Firefox extension from Mozilla AMO."
+                    exit 1
+                }
+            } else {
+                Write-Error "web-ext sign failed with a non-conflict error."
                 exit 1
             }
         } else {
@@ -90,6 +107,7 @@ jobs:
                 exit 1
             }
         }
+
 
     - name: Download and Setup Ahk2Exe Compiler
       shell: powershell
