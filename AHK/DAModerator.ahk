@@ -59,6 +59,7 @@ if !FileExist(ConfigFile) {
                 Run, %URL%
             }
         }
+        Gosub, ApplyWindowPos
         Gosub, SetHotkeys
     }
 }
@@ -91,6 +92,7 @@ ShowGui:
     Gui, Add, Button, gBrowseChrome x+10 y114 w50, Обзор
     Gui, Add, Text, x10 y153 w160 gToggleNewWindow, Открывать в новом окне:
     Gui, Add, CheckBox, x+1 vOpenNewWindow y150 h21,
+    Gui, Add, Button, gSaveWindowPos x214 y149 w240, Запомнить положение окна
     Gui, Add, Button, gResetSettings x214 y+15 w140, Сбросить настройки
     Gui, Add, Button, Default gSubmit x+10 w90, Сохранить
     Gui, Show, w465 h220, DA Moderator - Настройки
@@ -172,6 +174,9 @@ ResetSettings:
     IniWrite, %OpenNewWindow%, %ConfigFile%, Settings, OpenNewWindow
     IniWrite, %ChromePath%, %ConfigFile%, Settings, ChromePath
 
+    ; Сбрасываем сохраненное положение окна
+    IniDelete, %ConfigFile%, Window
+
     ; Перезапускаем GUI с новыми значениями
     Gosub, ShowGui
 return
@@ -219,6 +224,38 @@ GuiClose:
 
     ; Активируем горячие клавиши
     Gosub, SetHotkeys
+return
+
+; Сохранение текущего положения и размера окна виджета
+SaveWindowPos:
+    IfWinExist, Last alerts - DonationAlerts
+    {
+        WinGetPos, WinX, WinY, WinW, WinH, Last alerts - DonationAlerts
+        IniWrite, %WinX%, %ConfigFile%, Window, X
+        IniWrite, %WinY%, %ConfigFile%, Window, Y
+        IniWrite, %WinW%, %ConfigFile%, Window, Width
+        IniWrite, %WinH%, %ConfigFile%, Window, Height
+        MsgBox, 64, Успешно, Положение и размер окна успешно сохранены!`n`nПозиция: X=%WinX%, Y=%WinY%`nРазмер: %WinW% x %WinH%
+    } else {
+        MsgBox, 48, Окно не найдено, Окно виджета «Last alerts - DonationAlerts» не найдено.`nСначала откройте страницу виджета и настройте её размер и положение.
+    }
+return
+
+; Применение сохраненного положения и размера окна виджета
+ApplyWindowPos:
+    IniRead, WinX, %ConfigFile%, Window, X, %A_Space%
+    IniRead, WinY, %ConfigFile%, Window, Y, %A_Space%
+    IniRead, WinW, %ConfigFile%, Window, Width, %A_Space%
+    IniRead, WinH, %ConfigFile%, Window, Height, %A_Space%
+
+    if (WinX != "" && WinX != "ERROR" && WinY != "" && WinY != "ERROR" && WinW != "" && WinW != "ERROR" && WinH != "" && WinH != "ERROR") {
+        WinWait, Last alerts - DonationAlerts, , 5
+        if !ErrorLevel {
+            Sleep, 150
+            WinRestore, Last alerts - DonationAlerts
+            WinMove, Last alerts - DonationAlerts, , %WinX%, %WinY%, %WinW%, %WinH%
+        }
+    }
 return
 
 ; Безопасная установка горячих клавиш с перехватом ошибок (например, невалидные имена клавиш при русской раскладке)
