@@ -304,7 +304,7 @@ return
 ; Сохранение параметров отдельного окна в заданную секцию config.ini
 SaveSingleWindowPos(hWnd, sectionName) {
     global ConfigFile
-    WinGetPos, WinX, WinY, WinW, WinH, ahk_id %hWnd%
+    GetVisibleWindowRect(hWnd, WinX, WinY, WinW, WinH)
 
     ; Определяем монитор и рабочую область (без панели задач)
     CenterX := WinX + WinW / 2
@@ -326,7 +326,7 @@ SaveSingleWindowPos(hWnd, sectionName) {
     WorkWidth := WorkRight - WorkLeft
     WorkHeight := WorkBottom - WorkTop
 
-    ; Анализируем, прикреплено ли окно через Windows Snap
+    ; Анализируем, занимает ли окно всю высоту рабочей области
     Tolerance := 25
     IsFullHeight := (Abs(WinY - WorkTop) <= Tolerance) && (Abs((WinY + WinH) - WorkBottom) <= Tolerance)
     IsRightEdge := (Abs((WinX + WinW) - WorkRight) <= Tolerance)
@@ -335,16 +335,19 @@ SaveSingleWindowPos(hWnd, sectionName) {
 
     if (IsFullHeight && IsRightEdge && IsHalfWidth) {
         SnapMode := "RightHalf"
-        ModeDesc := "Правая половина (Windows Snap)"
+        ModeDesc := "Правая половина"
     } else if (IsFullHeight && IsLeftEdge && IsHalfWidth) {
         SnapMode := "LeftHalf"
-        ModeDesc := "Левая половина (Windows Snap)"
+        ModeDesc := "Левая половина"
     } else if (IsFullHeight && IsRightEdge) {
         SnapMode := "RightDock"
         ModeDesc := "Справа на всю высоту"
     } else if (IsFullHeight && IsLeftEdge) {
         SnapMode := "LeftDock"
         ModeDesc := "Слева на всю высоту"
+    } else if (IsFullHeight) {
+        SnapMode := "FullHeight"
+        ModeDesc := "На всю высоту"
     } else {
         SnapMode := "Custom"
         ModeDesc := "Пользовательское"
@@ -408,18 +411,63 @@ ApplyWindowPosition(hWnd, sectionName) {
         WorkHeight := WorkBottom - WorkTop
 
         if (SnapMode = "RightHalf") {
-            WinActivate, ahk_id %hWnd%
-            Send, #{Right}
+            MoveVisibleWindow(hWnd, WorkRight - WorkWidth / 2, WorkTop, WorkWidth / 2, WorkHeight)
         } else if (SnapMode = "LeftHalf") {
-            WinActivate, ahk_id %hWnd%
-            Send, #{Left}
+            MoveVisibleWindow(hWnd, WorkLeft, WorkTop, WorkWidth / 2, WorkHeight)
         } else if (SnapMode = "RightDock") {
-            WinMove, ahk_id %hWnd%, , WorkRight - WinW, WorkTop, WinW, WorkHeight
+            MoveVisibleWindow(hWnd, WorkRight - WinW, WorkTop, WinW, WorkHeight)
         } else if (SnapMode = "LeftDock") {
-            WinMove, ahk_id %hWnd%, , WorkLeft, WorkTop, WinW, WorkHeight
+            MoveVisibleWindow(hWnd, WorkLeft, WorkTop, WinW, WorkHeight)
+        } else if (SnapMode = "FullHeight") {
+            MoveVisibleWindow(hWnd, WinX, WorkTop, WinW, WorkHeight)
         } else {
-            WinMove, ahk_id %hWnd%, , %WinX%, %WinY%, %WinW%, %WinH%
+            MoveVisibleWindow(hWnd, WinX, WinY, WinW, WinH)
         }
+    }
+}
+
+; Получение реального видимого прямоугольника окна через DWM (без невидимых рамок Windows 10/11)
+GetVisibleWindowRect(hWnd, ByRef x, ByRef y, ByRef w, ByRef h) {
+    VarSetCapacity(rectDwm, 16, 0)
+    hr := DllCall("dwmapi\DwmGetWindowAttribute", "Ptr", hWnd, "UInt", 9, "Ptr", &rectDwm, "UInt", 16)
+    if (hr = 0) {
+        x := NumGet(rectDwm, 0, "Int")
+        y := NumGet(rectDwm, 4, "Int")
+        r := NumGet(rectDwm, 8, "Int")
+        b := NumGet(rectDwm, 12, "Int")
+        w := r - x
+        h := b - y
+        return true
+    }
+    WinGetPos, x, y, w, h, ahk_id %hWnd%
+    return false
+}
+
+; Перемещение окна с компенсацией невидимых системных рамок DWM (пиксель в пиксель до краев экрана и панели задач)
+MoveVisibleWindow(hWnd, targetX, targetY, targetW, targetH) {
+    VarSetCapacity(rectWin, 16, 0)
+    VarSetCapacity(rectDwm, 16, 0)
+    DllCall("GetWindowRect", "Ptr", hWnd, "Ptr", &rectWin)
+    hr := DllCall("dwmapi\DwmGetWindowAttribute", "Ptr", hWnd, "UInt", 9, "Ptr", &rectDwm, "UInt", 16)
+    if (hr = 0) {
+        wx := NumGet(rectWin, 0, "Int")
+        wy := NumGet(rectWin, 4, "Int")
+        wr := NumGet(rectWin, 8, "Int")
+        wb := NumGet(rectWin, 12, "Int")
+
+        dx := NumGet(rectDwm, 0, "Int")
+        dy := NumGet(rectDwm, 4, "Int")
+        dr := NumGet(rectDwm, 8, "Int")
+        db := NumGet(rectDwm, 12, "Int")
+
+        leftMargin := dx - wx
+        topMargin := dy - wy
+        rightMargin := wr - dr
+        bottomMargin := wb - db
+
+        WinMove, ahk_id %hWnd%, , targetX - leftMargin, targetY - topMargin, targetW + leftMargin + rightMargin, targetH + topMargin + bottomMargin
+    } else {
+        WinMove, ahk_id %hWnd%, , targetX, targetY, targetW, targetH
     }
 }
 
