@@ -21,6 +21,7 @@ DefaultMouseBind1 := "XButton2"
 DefaultUserBind2 := "!s"
 DefaultMouseBind2 := ""
 DefaultURL := ""
+DefaultOpenNewWindow := 1
 DefaultChromePath := "" ; По умолчанию путь пустой (будет использоваться браузер по умолчанию)
 ChromeDefaultExe := "C:\Program Files\Google\Chrome\Application\chrome.exe" ; Стандартный путь к Chrome
 
@@ -32,6 +33,7 @@ if !FileExist(ConfigFile) {
     IniRead, UserBind2, %ConfigFile%, Settings, UserBind2
     IniRead, MouseBind2, %ConfigFile%, Settings, MouseBind2
     IniRead, URL, %ConfigFile%, Settings, URL
+    IniRead, OpenNewWindow, %ConfigFile%, Settings, OpenNewWindow, 1
     IniRead, ChromePath, %ConfigFile%, Settings, ChromePath
 
     ; Проверяем валидность ссылки (она должна начинаться с http:// или https://)
@@ -42,11 +44,20 @@ if !FileExist(ConfigFile) {
         URL := "" ; Очищаем невалидную ссылку для плейсхолдера
         Gosub, ShowGui
     } else {
-        ; Если указан конкретный путь к браузеру, открываем в нем. Иначе в браузере по умолчанию.
-        if (ChromePath != "" && FileExist(ChromePath)) {
-            Run, "%ChromePath%" --new-window "%URL%"
+        ; Если указан конкретный путь к браузеру, открываем в нем. Иначе определяем браузер по умолчанию.
+        if (OpenNewWindow) {
+            BrowserExe := (ChromePath != "" && FileExist(ChromePath)) ? ChromePath : GetDefaultBrowserExe()
+            if (BrowserExe != "") {
+                Run, "%BrowserExe%" --new-window "%URL%"
+            } else {
+                Run, %URL%
+            }
         } else {
-            Run, %URL%
+            if (ChromePath != "" && FileExist(ChromePath)) {
+                Run, "%ChromePath%" "%URL%"
+            } else {
+                Run, %URL%
+            }
         }
         Gosub, SetHotkeys
     }
@@ -75,12 +86,13 @@ ShowGui:
     GuiControl, ChooseString, MouseBind2, % (MouseBind2 = "" ? "Нет" : MouseBind2)
     Gui, Add, Text, x10 y83 w160, Ссылка для открытия:
     Gui, Add, Edit, x+1 vURL y80 w280 HwndhURL,
-    Gui, Add, Text, x10 y113 w160, Путь до браузера:
-    Gui, Add, Edit, x+1 vChromePath y110 w222 HwndhChromePath,
-    Gui, Add, Button, gBrowseChrome x+10 y109 w50, Обзор
+    Gui, Add, CheckBox, x171 y110 vOpenNewWindow w280, Открывать страницу в новом окне браузера
+    Gui, Add, Text, x10 y143 w160, Путь до браузера:
+    Gui, Add, Edit, x+1 vChromePath y140 w222 HwndhChromePath,
+    Gui, Add, Button, gBrowseChrome x+10 y139 w50, Обзор
     Gui, Add, Button, gResetSettings x214 y+15 w140, Сбросить настройки
     Gui, Add, Button, Default gSubmit x+10 w90, Сохранить
-    Gui, Show, w465 h180, DA Moderator - Настройки
+    Gui, Show, w465 h210, DA Moderator - Настройки
 
     ; Устанавливаем плейсхолдер "по умолчанию" (wParam = 0, чтобы скрывался сразу при фокусе)
     PlaceholderPath := "по умолчанию"
@@ -90,8 +102,9 @@ ShowGui:
     PlaceholderURL := "https://www.donationalerts.com/widget/lastdonations?alert_type=..."
     SendMessage, 0x1501, 0, &PlaceholderURL, , ahk_id %hURL%
 
-    ; Устанавливаем текст в элементы управления Edit после их создания
+    ; Устанавливаем текст и состояние в элементы управления после их создания
     GuiControl,, URL, %URL%
+    GuiControl,, OpenNewWindow, %OpenNewWindow%
     GuiControl,, ChromePath, %ChromePath%
 return
 
@@ -113,6 +126,7 @@ Submit:
     IniWrite, %UserBind2%, %ConfigFile%, Settings, UserBind2
     IniWrite, %MouseBind2%, %ConfigFile%, Settings, MouseBind2
     IniWrite, %URL%, %ConfigFile%, Settings, URL
+    IniWrite, %OpenNewWindow%, %ConfigFile%, Settings, OpenNewWindow
     IniWrite, %ChromePath%, %ConfigFile%, Settings, ChromePath
 
     ; Активируем горячие клавиши
@@ -140,6 +154,7 @@ ResetSettings:
     UserBind2 := DefaultUserBind2
     MouseBind2 := DefaultMouseBind2
     URL := DefaultURL
+    OpenNewWindow := DefaultOpenNewWindow
     ChromePath := DefaultChromePath
 
     ; Сохраняем настройки по умолчанию в config.ini
@@ -148,6 +163,7 @@ ResetSettings:
     IniWrite, %UserBind2%, %ConfigFile%, Settings, UserBind2
     IniWrite, %MouseBind2%, %ConfigFile%, Settings, MouseBind2
     IniWrite, %URL%, %ConfigFile%, Settings, URL
+    IniWrite, %OpenNewWindow%, %ConfigFile%, Settings, OpenNewWindow
     IniWrite, %ChromePath%, %ConfigFile%, Settings, ChromePath
 
     ; Перезапускаем GUI с новыми значениями
@@ -192,6 +208,7 @@ GuiClose:
     IniRead, UserBind2, %ConfigFile%, Settings, UserBind2
     IniRead, MouseBind2, %ConfigFile%, Settings, MouseBind2
     IniRead, URL, %ConfigFile%, Settings, URL
+    IniRead, OpenNewWindow, %ConfigFile%, Settings, OpenNewWindow, 1
     IniRead, ChromePath, %ConfigFile%, Settings, ChromePath
 
     ; Активируем горячие клавиши
@@ -205,4 +222,21 @@ SafeHotkey(KeyName, LabelName, Options) {
     try {
         Hotkey, %KeyName%, %LabelName%, %Options%
     }
+}
+
+; Функция определения пути к исполняемому файлу браузера по умолчанию из реестра Windows
+GetDefaultBrowserExe() {
+    RegRead, ProgId, HKCU\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice, ProgId
+    if (ProgId = "")
+        RegRead, ProgId, HKCU\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice, ProgId
+    if (ProgId != "") {
+        RegRead, Cmd, HKCR\%ProgId%\shell\open\command
+        if (Cmd != "") {
+            if RegExMatch(Cmd, "i)""?([^""]+\.exe)""?", Match) {
+                if FileExist(Match1)
+                    return Match1
+            }
+        }
+    }
+    return ""
 }
