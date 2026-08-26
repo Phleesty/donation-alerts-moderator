@@ -86,13 +86,14 @@ ShowGui:
     GuiControl, ChooseString, MouseBind2, % (MouseBind2 = "" ? "Нет" : MouseBind2)
     Gui, Add, Text, x10 y83 w160, Ссылка для открытия:
     Gui, Add, Edit, x+1 vURL y80 w280 HwndhURL,
-    Gui, Add, CheckBox, x171 y110 vOpenNewWindow w280, Открывать страницу в новом окне браузера
-    Gui, Add, Text, x10 y143 w160, Путь до браузера:
-    Gui, Add, Edit, x+1 vChromePath y140 w222 HwndhChromePath,
-    Gui, Add, Button, gBrowseChrome x+10 y139 w50, Обзор
+    Gui, Add, Text, x10 y118 w160, Путь до браузера:
+    Gui, Add, Edit, x+1 vChromePath y115 w222 HwndhChromePath,
+    Gui, Add, Button, gBrowseChrome x+10 y114 w50, Обзор
+    Gui, Add, Text, x10 y153 w160 gToggleNewWindow, Открывать в новом окне:
+    Gui, Add, CheckBox, x+1 vOpenNewWindow y150 h21,
     Gui, Add, Button, gResetSettings x214 y+15 w140, Сбросить настройки
     Gui, Add, Button, Default gSubmit x+10 w90, Сохранить
-    Gui, Show, w465 h210, DA Moderator - Настройки
+    Gui, Show, w465 h220, DA Moderator - Настройки
 
     ; Устанавливаем плейсхолдер "по умолчанию" (wParam = 0, чтобы скрывался сразу при фокусе)
     PlaceholderPath := "по умолчанию"
@@ -106,6 +107,11 @@ ShowGui:
     GuiControl,, URL, %URL%
     GuiControl,, OpenNewWindow, %OpenNewWindow%
     GuiControl,, ChromePath, %ChromePath%
+return
+
+ToggleNewWindow:
+    GuiControlGet, CurrentState,, OpenNewWindow
+    GuiControl,, OpenNewWindow, % !CurrentState
 return
 
 Submit:
