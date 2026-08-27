@@ -290,6 +290,9 @@ const loadSettings = () => {
 
     const targetSound = data.selectedSound ? migrateSoundUrl(data.selectedSound) : DEFAULT_SOUND_URL;
     preloadSelectedSound(targetSound);
+
+    // Мгновенно запускаем обработку очереди после обновления настроек
+    processAlerts();
   });
 };
 
@@ -342,7 +345,8 @@ const processAlerts = async () => {
   isProcessingAlerts = true;
 
   try {
-    const alerts = Array.from(document.querySelectorAll(".event.b-last-events-widget__item.moderated")).reverse();
+    // Выбираем все активные события (исключая архивные .shown)
+    const alerts = Array.from(document.querySelectorAll(".event:not(.shown)")).reverse();
     const approveButtons = [];
     const skipButtons = [];
     const processedAlerts = new Set();
@@ -360,12 +364,10 @@ const processAlerts = async () => {
         }
       }
 
-      // Автопропуск
+      // Автопропуск (работает для любых активных и проигрываемых событий, кроме архивных .shown)
       if (autoSkipSettings[alertType] && !processedAlerts.has(alertId)) {
         const skipButton = alert.querySelector(".action-button-item.skip");
-        const showNowButton = alert.querySelector(".action-button-item.show-now");
-        if (skipButton && skipButton.offsetParent !== null && skipButton.style.display !== "none" &&
-            (!showNowButton || showNowButton.style.display !== "none")) {
+        if (skipButton && skipButton.offsetParent !== null && skipButton.style.display !== "none") {
           skipButtons.push(skipButton);
           processedAlerts.add(alertId);
         }
@@ -396,7 +398,7 @@ const isShortcutPressed = (event, shortcut) =>
 
 const handleApprove = () => {
   console.log("Approve action triggered");
-  const buttons = [...document.querySelectorAll(".action-button-item.show-now")];
+  const buttons = [...document.querySelectorAll(".event:not(.shown) .action-button-item.show-now")];
   const visibleButtons = buttons.filter((btn) => btn.offsetParent !== null && btn.style.display !== "none");
   if (visibleButtons.length) {
     const targetButton = visibleButtons[visibleButtons.length - 1];
@@ -409,12 +411,8 @@ const handleApprove = () => {
 
 const handleSkip = () => {
   console.log("Skip action triggered");
-  const buttons = [...document.querySelectorAll(".action-button-item.skip")];
-  const visibleButtons = buttons.filter((btn) => {
-    const showNowButton = btn.parentElement.querySelector(".action-button-item.show-now");
-    return btn.offsetParent !== null && btn.style.display !== "none" &&
-           (!showNowButton || showNowButton.style.display !== "none");
-  });
+  const buttons = [...document.querySelectorAll(".event:not(.shown) .action-button-item.skip")];
+  const visibleButtons = buttons.filter((btn) => btn.offsetParent !== null && btn.style.display !== "none");
   if (visibleButtons.length) {
     const targetButton = visibleButtons[visibleButtons.length - 1];
     targetButton.click();
@@ -584,6 +582,7 @@ loadSettings();
 
 // Мгновенная реакция на появление новых алертов
 const observer = new MutationObserver((mutations) => {
+  let hasNewAlerts = false;
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
       if (!(node instanceof HTMLElement)) continue;
@@ -591,6 +590,7 @@ const observer = new MutationObserver((mutations) => {
         ? node
         : node.querySelector?.(".event");
       if (candidate) {
+        hasNewAlerts = true;
         // Быстрый обработчик только для звука + метки, чтобы уменьшить задержку
         if (shouldPlaySound(candidate) && soundEnabledCache) {
           playSound(volumeCache);
@@ -600,6 +600,9 @@ const observer = new MutationObserver((mutations) => {
         processYoutubePreviews(candidate);
       }
     }
+  }
+  if (hasNewAlerts) {
+    processAlerts();
   }
 });
 
